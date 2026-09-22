@@ -38,6 +38,13 @@ export async function cambiarCodigoAction(
   formData: FormData
 ): Promise<EstadoAjustes> {
   const codigo = String(formData.get("codigoNuevo") ?? "");
+  const confirmacion = String(formData.get("codigoConfirmacion") ?? "");
+
+  // El cliente ya compara los dos campos, pero se revisa otra vez aquí:
+  // nunca confiar solo en la validación de la pantalla.
+  if (codigo.trim().toLowerCase() !== confirmacion.trim().toLowerCase()) {
+    return { error: "Los dos códigos no coinciden.", exito: false };
+  }
 
   const supabase = await crearClienteServidor();
   const { data: familia } = await supabase

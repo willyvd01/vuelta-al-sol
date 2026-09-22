@@ -249,3 +249,4 @@ Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencill
 - Portada A o B.
 - Datos de enero: apellido de Yorla; confirmar si son dos personas llamadas Wilson Tabares (19 y 20).
 - Precio y forma de venta.
+- Hoy cualquier usuario con sesión puede crear familias (`crear_familia` solo exige `auth.uid()`), incluidos los colaboradores. Antes de vender hay que definir quién puede hacerlo y reforzarlo en la base de datos, no solo ocultando el botón en la pantalla.

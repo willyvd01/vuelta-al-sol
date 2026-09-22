@@ -80,6 +80,37 @@
   cursor: default;
 }
 
+.botonSecundario {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 12px 20px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--tinta);
+  background: transparent;
+  border: 1px solid var(--filete);
+  cursor: pointer;
+}
+
+.filaBotones {
+  display: flex;
+  gap: 10px;
+}
+
+.advertencia {
+  margin: 0;
+  max-width: 360px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--secundario);
+  padding: 12px 14px;
+  border: 1px solid var(--filete);
+  background: var(--foto-vacia);
+}
+
 .error {
   margin: 0;
   font-family: var(--font-jost), sans-serif;
