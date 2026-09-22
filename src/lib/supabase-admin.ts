@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import type { Database } from "./database.types";
 
@@ -435,4 +436,49 @@ export async function procesarFotoRecuerdo(
 
 export async function borrarFotosDeRecuerdo(rutas: string[]): Promise<void> {
   await borrarFotos(rutas);
+}
+
+// ---------------------------------------------------------------------
+// Colaboradores: crear la cuenta es lo único de esta sección que usa la
+// service role key (el navegador no puede crear usuarios), y siempre
+// después de que la página ya comprobó que quien lo pide es admin.
+// ---------------------------------------------------------------------
+
+export async function crearUsuarioColaborador(
+  correo: string,
+  nombre: string
+): Promise<{ userId: string; contrasenaTemporal: string }> {
+  const contrasenaTemporal = randomBytes(9).toString("base64url");
+  const { data, error } = await admin.auth.admin.createUser({
+    email: correo,
+    password: contrasenaTemporal,
+    email_confirm: true,
+    user_metadata: { nombre },
+  });
+  if (error) throw new Error(error.message);
+  return { userId: data.user.id, contrasenaTemporal };
+}
+
+export interface DatosUsuario {
+  correo: string;
+  nombre: string | null;
+}
+
+/** Resuelve correo y nombre de una lista de user_id ya confirmados como miembros de la familia. */
+export async function obtenerDatosDeUsuarios(
+  userIds: string[]
+): Promise<Map<string, DatosUsuario>> {
+  const resultado = new Map<string, DatosUsuario>();
+  await Promise.all(
+    userIds.map(async (id) => {
+      const { data } = await admin.auth.admin.getUserById(id);
+      if (data.user) {
+        resultado.set(id, {
+          correo: data.user.email ?? "",
+          nombre: (data.user.user_metadata?.nombre as string | undefined) ?? null,
+        });
+      }
+    })
+  );
+  return resultado;
 }

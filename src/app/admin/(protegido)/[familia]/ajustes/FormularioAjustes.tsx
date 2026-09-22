@@ -1,7 +1,12 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { guardarDatosAction, cambiarCodigoAction, type EstadoAjustes } from "./actions";
+import {
+  guardarDatosAction,
+  cambiarCodigoAction,
+  cambiarMiContrasenaAction,
+  type EstadoAjustes,
+} from "./actions";
 import styles from "./page.module.css";
 
 const estadoInicial: EstadoAjustes = { error: null, exito: false };
@@ -130,6 +135,51 @@ export function FormularioCodigo({ slug }: { slug: string }) {
           Cancelar
         </button>
       </div>
+    </form>
+  );
+}
+
+export function FormularioMiContrasena() {
+  const [estado, enviar, enCurso] = useActionState(cambiarMiContrasenaAction, estadoInicial);
+  const [nueva, setNueva] = useState("");
+  const [confirmacion, setConfirmacion] = useState("");
+
+  const tocado = confirmacion.length > 0;
+  const coinciden = nueva === confirmacion;
+  const puedeEnviar = nueva.length >= 8 && tocado && coinciden;
+
+  return (
+    <form action={enviar} className={styles.formulario}>
+      <label className={styles.etiqueta}>
+        Contraseña nueva (mínimo 8 caracteres)
+        <input
+          type="password"
+          name="nueva"
+          value={nueva}
+          onChange={(e) => setNueva(e.target.value)}
+          minLength={8}
+          required
+          className={styles.campo}
+        />
+      </label>
+      <label className={styles.etiqueta}>
+        Repite la contraseña nueva
+        <input
+          type="password"
+          name="confirmacion"
+          value={confirmacion}
+          onChange={(e) => setConfirmacion(e.target.value)}
+          minLength={8}
+          required
+          className={styles.campo}
+        />
+      </label>
+      {tocado && !coinciden && <p className={styles.error}>Las dos contraseñas no coinciden.</p>}
+      {estado.error && <p className={styles.error}>{estado.error}</p>}
+      {estado.exito && <p className={styles.exito}>Contraseña actualizada.</p>}
+      <button type="submit" className={styles.boton} disabled={enCurso || !puedeEnviar}>
+        {enCurso ? "Cambiando…" : "Cambiar mi contraseña"}
+      </button>
     </form>
   );
 }
