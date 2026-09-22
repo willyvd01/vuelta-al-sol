@@ -59,3 +59,22 @@ export function diasDelMes(numero: number): number {
 export function mesEnUrl(numero: number): string {
   return String(numero).padStart(2, '0');
 }
+
+/** "14 de enero" */
+export function formatearDiaMes(dia: number, mes: number): string {
+  return `${dia} de ${obtenerMes(mes).nombre.toLowerCase()}`;
+}
+
+/**
+ * "24 de enero de 2025". Recibe la fecha como texto "AAAA-MM-DD" (la que
+ * entrega Postgres) y la parte a mano para no depender de Date/huso horario.
+ */
+export function formatearFechaLarga(fechaISO: string): string {
+  const [anio, mes, dia] = fechaISO.split('-').map(Number);
+  return `${formatearDiaMes(dia, mes)} de ${anio}`;
+}
+
+/** Año como texto, de la misma fecha "AAAA-MM-DD", sin pasar por Date. */
+export function anioDeFecha(fechaISO: string): number {
+  return Number(fechaISO.split('-')[0]);
+}

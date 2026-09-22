@@ -145,6 +145,21 @@ Portadas (el cliente elige una):
 - Ningún texto menor a 11 px.
 - Los datos se consultan en el servidor (`src/lib/supabase-admin.ts`, con la service role key); nada de esa llave llega al navegador. Las fotos se muestran con URL firmadas de corta duración generadas también en el servidor.
 
+## Ficha de persona (celular)
+
+`/f/[familia]/p/[codigo]`. Mismo marco que la vista del mes: celular primero, máximo ~480 px, fondo marfil con la marca de agua sutil. Ningún texto menor a 11 px. Solo lectura: sin botones de añadir o editar.
+
+- Arriba, enlace de regreso "← [Mes]" a `/f/[familia]/[mes de la persona]`.
+- Retrato cuadrado grande (`foto_web` con URL firmada, o el mismo marcador de silueta que en la rejilla).
+- Nombre completo en Cormorant 34 px. Debajo, en rótulo: "14 de enero · Capricornio" con el ícono del signo en bronce, y el parentesco si existe.
+- Si hay año de nacimiento y la persona no está marcada como fallecida: "Cumple N años el 14 de enero", calculado con la fecha actual. Sin año, no se muestra edad.
+- Filete y sección "Recuerdos", agrupados por año del más reciente al más antiguo. Cada año con su número en Cormorant bronce y una línea fina.
+- **Cada recuerdo:** fotos (si hay varias, carrusel horizontal que se desliza con el dedo; al tocar una foto se abre en grande con botón de cerrar), título en Cormorant, fecha y lugar en rótulo, historia en Jost 15 px con buen interlineado. Si aparecen otras personas, "Con: [nombres]", cada nombre enlazado a su ficha.
+- Sin recuerdos: "Aún no hay recuerdos de [nombre]".
+- 404 si el código no existe, o si la persona pertenece a otra familia distinta a la de la URL.
+- Título de la pestaña: "[Nombre] — Vuelta al Sol". Todas las páginas bajo `/f/` (incluida la vista del mes) llevan `noindex` — no deben aparecer en buscadores.
+- Mismo patrón de datos que la vista del mes: se consultan en el servidor con la service role key; las fotos, con URL firmadas.
+
 ## Plan por fases
 
 Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencillo qué se hizo, cómo probarlo, y espera confirmación antes de seguir.

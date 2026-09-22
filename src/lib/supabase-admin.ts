@@ -29,6 +29,35 @@ export interface Persona {
   fotoWebUrl: string | null;
 }
 
+export interface PersonaFicha extends Persona {
+  id: string;
+  familiaId: string;
+  parentesco: string | null;
+  fallecida: boolean;
+}
+
+export interface FotoRecuerdo {
+  url: string;
+  ancho: number | null;
+  alto: number | null;
+}
+
+export interface PersonaEnRecuerdo {
+  codigo: string;
+  nombres: string;
+  apellidos: string;
+}
+
+export interface Recuerdo {
+  id: string;
+  fecha: string;
+  titulo: string;
+  historia: string | null;
+  lugar: string | null;
+  fotos: FotoRecuerdo[];
+  otrasPersonas: PersonaEnRecuerdo[];
+}
+
 export async function obtenerFamiliaPorSlug(slug: string) {
   const { data, error } = await admin
     .from("familias")
@@ -76,6 +105,118 @@ export async function obtenerPersonasDelMes(
         anio: persona.anio,
         signo: persona.signo ?? "",
         fotoWebUrl,
+      };
+    })
+  );
+}
+
+export async function obtenerPersonaPorCodigo(
+  codigo: string
+): Promise<PersonaFicha | null> {
+  const { data, error } = await admin
+    .from("personas")
+    .select(
+      "id, codigo, nombres, apellidos, dia, mes, anio, signo, foto_web, familia_id, parentesco, fallecida"
+    )
+    .eq("codigo", codigo)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  let fotoWebUrl: string | null = null;
+  if (data.foto_web) {
+    const { data: firmada } = await admin.storage
+      .from("fotos")
+      .createSignedUrl(data.foto_web, DURACION_URL_FIRMADA);
+    fotoWebUrl = firmada?.signedUrl ?? null;
+  }
+
+  return {
+    id: data.id,
+    codigo: data.codigo,
+    nombres: data.nombres,
+    apellidos: data.apellidos,
+    dia: data.dia,
+    mes: data.mes,
+    anio: data.anio,
+    signo: data.signo ?? "",
+    fotoWebUrl,
+    familiaId: data.familia_id,
+    parentesco: data.parentesco,
+    fallecida: data.fallecida,
+  };
+}
+
+interface FilaRecuerdo {
+  id: string;
+  fecha: string;
+  titulo: string;
+  historia: string | null;
+  lugar: string | null;
+  recuerdo_fotos: {
+    ruta_web: string;
+    ancho: number | null;
+    alto: number | null;
+  }[];
+  participantes: {
+    personas: { codigo: string; nombres: string; apellidos: string } | null;
+  }[];
+}
+
+export async function obtenerRecuerdosDePersona(
+  familiaId: string,
+  personaId: string,
+  codigoPersona: string
+): Promise<Recuerdo[]> {
+  const { data, error } = await admin
+    .from("recuerdos")
+    .select(
+      `id, fecha, titulo, historia, lugar,
+       recuerdo_fotos ( ruta_web, ancho, alto, orden ),
+       participantes:recuerdo_personas ( personas ( codigo, nombres, apellidos ) ),
+       filtro:recuerdo_personas!inner ( persona_id )`
+    )
+    .eq("familia_id", familiaId)
+    .eq("filtro.persona_id", personaId)
+    .order("fecha", { ascending: false })
+    .order("orden", { referencedTable: "recuerdo_fotos", ascending: true });
+
+  if (error) throw new Error(error.message);
+  if (!data) return [];
+
+  const filas = data as unknown as FilaRecuerdo[];
+
+  return Promise.all(
+    filas.map(async (fila) => {
+      const fotos = await Promise.all(
+        fila.recuerdo_fotos.map(async (foto) => {
+          const { data: firmada } = await admin.storage
+            .from("fotos")
+            .createSignedUrl(foto.ruta_web, DURACION_URL_FIRMADA);
+          return {
+            url: firmada?.signedUrl ?? "",
+            ancho: foto.ancho,
+            alto: foto.alto,
+          };
+        })
+      );
+
+      const otrasPersonas = fila.participantes
+        .map((p) => p.personas)
+        .filter(
+          (p): p is PersonaEnRecuerdo => !!p && p.codigo !== codigoPersona
+        )
+        .sort((a, b) => a.nombres.localeCompare(b.nombres, "es"));
+
+      return {
+        id: fila.id,
+        fecha: fila.fecha,
+        titulo: fila.titulo,
+        historia: fila.historia,
+        lugar: fila.lugar,
+        fotos: fotos.filter((f) => f.url),
+        otrasPersonas,
       };
     })
   );
