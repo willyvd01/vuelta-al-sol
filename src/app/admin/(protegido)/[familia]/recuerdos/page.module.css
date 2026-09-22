@@ -1,0 +1,125 @@
+.cabeceraLista {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--tinta);
+}
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--marfil);
+  background: var(--bronce);
+  text-decoration: none;
+}
+
+.vacio {
+  font-family: var(--font-jost), sans-serif;
+  font-size: 14px;
+  color: var(--secundario);
+}
+
+.grupoAnio {
+  margin-bottom: 24px;
+}
+
+.tituloAnio {
+  margin: 0 0 10px;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--bronce);
+}
+
+.listaRecuerdos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--filete);
+}
+
+.filaRecuerdo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--filete);
+}
+
+.fotoChica {
+  position: relative;
+  flex-shrink: 0;
+  width: 56px;
+  height: 42px;
+  background: var(--foto-vacia);
+}
+
+.datosRecuerdo {
+  flex: 1;
+  min-width: 0;
+}
+
+.tituloRecuerdo {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-size: 16px;
+  color: var(--tinta);
+}
+
+.metaRecuerdo {
+  margin: 2px 0 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--secundario);
+}
+
+.accionesPersona {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+}
+
+.accionesPersona a {
+  color: var(--bronce);
+  text-decoration: none;
+}
+
+.accionesPersona button {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  color: var(--secundario);
+  cursor: pointer;
+}
+
+.accionesPersona button:hover {
+  color: var(--bronce);
+}
+
+.errorChico {
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  color: #a1503f;
+}

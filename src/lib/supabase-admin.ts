@@ -402,3 +402,37 @@ export async function borrarFotosDePersona(familiaId: string, personaId: string)
     `${familiaId}/personas/${personaId}/web.webp`,
   ]);
 }
+
+/**
+ * Foto de un recuerdo: sin recorte. Guarda original.jpg a resolución
+ * completa (solo corrige orientación) y web.webp con el lado mayor a
+ * 1600 px, sin agrandar fotos más pequeñas.
+ */
+export async function procesarFotoRecuerdo(
+  familiaId: string,
+  recuerdoId: string,
+  fotoId: string,
+  rutaTemporal: string
+): Promise<{ original: string; web: string; ancho: number; alto: number }> {
+  const crudo = await descargarFoto(rutaTemporal);
+
+  const original = await sharp(crudo).rotate().jpeg({ quality: 92 }).toBuffer();
+  const web = await sharp(original)
+    .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 85 })
+    .toBuffer();
+  const metaWeb = await sharp(web).metadata();
+
+  const rutaOriginal = `${familiaId}/recuerdos/${recuerdoId}/${fotoId}-original.jpg`;
+  const rutaWeb = `${familiaId}/recuerdos/${recuerdoId}/${fotoId}-web.webp`;
+
+  await subirFotoProcesada(rutaOriginal, original, "image/jpeg");
+  await subirFotoProcesada(rutaWeb, web, "image/webp");
+  await borrarFotos([rutaTemporal]);
+
+  return { original: rutaOriginal, web: rutaWeb, ancho: metaWeb.width ?? 0, alto: metaWeb.height ?? 0 };
+}
+
+export async function borrarFotosDeRecuerdo(rutas: string[]): Promise<void> {
+  await borrarFotos(rutas);
+}

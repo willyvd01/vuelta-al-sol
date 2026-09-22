@@ -318,6 +318,13 @@ create policy rf_agregar on public.recuerdo_fotos for insert to authenticated wi
   public.es_miembro(recuerdo_fotos.familia_id)
   and exists (select 1 from public.recuerdos r
               where r.id = recuerdo_fotos.recuerdo_id and r.familia_id = recuerdo_fotos.familia_id));
+create policy rf_editar on public.recuerdo_fotos for update to authenticated
+  using (
+    public.es_admin(familia_id)
+    or exists (select 1 from public.recuerdos r
+               where r.id = recuerdo_fotos.recuerdo_id and r.creado_por = auth.uid())
+  )
+  with check (public.es_miembro(familia_id));
 create policy rf_borrar on public.recuerdo_fotos for delete to authenticated using (public.es_admin(familia_id));
 
 create policy ediciones_ver     on public.ediciones for select to authenticated using (public.es_miembro(familia_id));
