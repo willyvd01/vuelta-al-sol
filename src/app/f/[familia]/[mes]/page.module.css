@@ -1,0 +1,232 @@
+.pagina {
+  position: relative;
+  min-height: 100dvh;
+  background: var(--marfil);
+  overflow: hidden;
+}
+
+.contenido {
+  position: relative;
+  z-index: 1;
+  background: var(--marfil);
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 28px 20px 40px;
+}
+
+.cabecera {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.nombreFamilia {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  color: var(--bronce);
+}
+
+.navegacionMes {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+
+.nombreMes {
+  margin: 0;
+  flex: 1;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: clamp(28px, 8vw, 34px);
+  color: var(--tinta);
+}
+
+.flecha {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--bronce);
+}
+
+.iconoFlecha {
+  width: 20px;
+  height: 20px;
+}
+
+.traducciones {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  color: var(--secundario);
+}
+
+.signos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-top: 4px;
+}
+
+.signo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+}
+
+.signo:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.signo:not(:first-child) {
+  border-left: 1px solid var(--filete);
+}
+
+.iconoSigno {
+  width: 16px;
+  height: 16px;
+  color: var(--bronce);
+  flex-shrink: 0;
+}
+
+.nombreSigno {
+  color: var(--tinta);
+}
+
+.rangoSigno {
+  color: var(--secundario);
+}
+
+.filete {
+  height: 1px;
+  background: var(--filete);
+  margin: 24px 0 12px;
+}
+
+.instruccion {
+  margin: 0 0 20px;
+  text-align: center;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--secundario);
+}
+
+.vacio {
+  text-align: center;
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--secundario);
+  padding: 40px 0;
+}
+
+.rejilla {
+  list-style: none;
+  margin: 0 0 32px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px 12px;
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.foto {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--foto-vacia);
+  overflow: hidden;
+}
+
+.iconoPersonaVacia {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 36%;
+  height: 36%;
+  color: var(--secundario);
+}
+
+.nombrePersona {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.detallePersona {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  color: var(--bronce);
+}
+
+.puntoSeparador {
+  color: var(--filete);
+}
+
+.iconoSignoChico {
+  width: 12px;
+  height: 12px;
+}
+
+.tiraMeses {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--filete);
+}
+
+.mesTira {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 26px;
+  padding: 0 4px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--secundario);
+  text-decoration: none;
+}
+
+.mesActivo {
+  background: var(--bronce);
+  color: var(--marfil);
+}

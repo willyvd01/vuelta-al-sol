@@ -1,0 +1,34 @@
+.main {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.rotulo {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  color: var(--bronce);
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 400;
+  font-size: 28px;
+}
+
+.texto {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--secundario);
+  max-width: 32ch;
+}

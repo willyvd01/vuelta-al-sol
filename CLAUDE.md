@@ -130,6 +130,21 @@ Portadas (el cliente elige una):
 - **A — Rueda solar:** fondo tinta; en el centro, sol con 24 rayos, órbita punteada con un pequeño planeta, anillo con los 12 meses y anillo exterior con los 12 signos. Título "Nuestra" (itálica) / "Vuelta al Sol".
 - **B — Retrato familiar:** fondo marfil, foto familiar en arco, sol pequeño, mismo título.
 
+## Vista del mes (celular)
+
+`/f/[familia]/[mes]`. Solo lectura: sin botones de añadir o editar.
+
+- Diseñada para celular (390 px de ancho) y centrada en pantallas grandes (ancho máximo ~480 px).
+- Fondo marfil con la marca de agua del monograma de la familia (`familias.monograma`), igual que en impresión pero muy sutil.
+- **Cabecera centrada:** rótulo con el nombre de la familia; fila con flecha al mes anterior, nombre del mes en Cormorant 300 mayúsculas con espaciado amplio, y flecha al mes siguiente (diciembre enlaza a enero y viceversa; zonas táctiles de 44 px mínimo). Debajo, `traduccionesVisibles()` y los signos del mes con su ícono y rango de fechas (`signosDelMes`, `rangoSigno`).
+- Filete y el rótulo "Toca un retrato para abrir su historia".
+- **Rejilla de 3 columnas:** foto cuadrada (`foto_web` con URL firmada; sin foto → fondo `--foto-vacia` con ícono de persona en línea), nombre en Cormorant 500, debajo el día, el nombre del signo y su ícono pequeño en bronce. Cada tarjeta enlaza a `/f/[familia]/p/[codigo]`. Orden según las reglas del calendario.
+- Al final, la tira de los 12 meses con el actual resaltado en bronce; cada mes enlaza directo a esa página.
+- Sin cumpleaños ese mes: mensaje elegante "Nadie cumple años en [mes]", con la navegación intacta.
+- Mes fuera de 01–12 o familia desconocida: página 404.
+- Ningún texto menor a 11 px.
+- Los datos se consultan en el servidor (`src/lib/supabase-admin.ts`, con la service role key); nada de esa llave llega al navegador. Las fotos se muestran con URL firmadas de corta duración generadas también en el servidor.
+
 ## Plan por fases
 
 Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencillo qué se hizo, cómo probarlo, y espera confirmación antes de seguir.
