@@ -1,0 +1,66 @@
+.pagina {
+  min-height: 100dvh;
+  background: var(--marfil);
+}
+
+.cabecera {
+  border-bottom: 1px solid var(--filete);
+  padding: 16px 20px;
+}
+
+.filaSuperior {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.nombreFamilia {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 20px;
+  color: var(--tinta);
+}
+
+.botonCerrarSesion {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secundario);
+  cursor: pointer;
+}
+
+.botonCerrarSesion:hover {
+  color: var(--bronce);
+}
+
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.nav a {
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--secundario);
+  text-decoration: none;
+}
+
+.nav a:hover {
+  color: var(--bronce);
+}
+
+.contenido {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+}

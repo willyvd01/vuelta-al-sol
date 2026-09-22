@@ -1,0 +1,40 @@
+.titulo {
+  margin: 0 0 20px;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--tinta);
+}
+
+.rejilla {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.mes {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 8px;
+  border: 1px solid var(--filete);
+  text-decoration: none;
+}
+
+.nombreMes {
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--secundario);
+}
+
+.conteo {
+  font-family: var(--font-cormorant), serif;
+  font-size: 28px;
+  color: var(--bronce);
+}

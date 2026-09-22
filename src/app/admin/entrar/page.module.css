@@ -1,0 +1,89 @@
+.pagina {
+  min-height: 100dvh;
+  background: var(--marfil);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contenido {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 40px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.sol {
+  width: 34px;
+  height: 34px;
+  color: var(--sol);
+}
+
+.titulo {
+  margin: 4px 0 0;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--tinta);
+}
+
+.instruccion {
+  margin: 0 0 6px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--secundario);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.campo {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 13px 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 16px;
+  color: var(--tinta);
+  background: var(--marfil);
+  border: 1px solid var(--filete);
+}
+
+.campo:focus {
+  outline: none;
+  border-color: var(--bronce);
+}
+
+.boton {
+  width: 100%;
+  min-height: 44px;
+  padding: 13px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--marfil);
+  background: var(--bronce);
+  border: none;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  color: #a1503f;
+}

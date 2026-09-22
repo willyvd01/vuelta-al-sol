@@ -2,6 +2,7 @@ import "server-only";
 import { cookies, headers } from "next/headers";
 
 import { obtenerFamiliaPorId } from "./supabase-admin";
+import { crearClienteServidor } from "./supabase-server";
 import { mesEnUrl } from "./meses";
 
 const NOMBRE_COOKIE = "acceso";
@@ -104,12 +105,39 @@ export interface Acceso {
 }
 
 /**
- * Confirma que hay una cookie válida para `slug`: firma correcta, familia
- * que de verdad existe, y codigo_version que todavía coincide (si el
- * código cambió, la cookie vieja deja de servir). El id de familia sale
+ * ¿El usuario tiene sesión de Supabase Auth y es miembro (admin o
+ * colaborador) de esta familia? La propia consulta ya queda filtrada por
+ * RLS: si no hay sesión o no es miembro, vuelve vacía — no hace falta
+ * repetir esa lógica aquí.
+ */
+async function verificarAccesoPorSesion(slug: string): Promise<Acceso | null> {
+  const supabase = await crearClienteServidor();
+  const { data } = await supabase
+    .from("familias")
+    .select("id, nombre, slug, monograma")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!data) return null;
+  return {
+    familiaId: data.id,
+    slug: data.slug,
+    nombre: data.nombre,
+    monograma: data.monograma,
+  };
+}
+
+/**
+ * Confirma el acceso a `slug`, primero por sesión (admin o colaborador
+ * con cuenta) y, si no, por el código con cookie firmada: firma correcta,
+ * familia que de verdad existe, y codigo_version que todavía coincide (si
+ * el código cambió, la cookie vieja deja de servir). El id de familia sale
  * de aquí, nunca del slug de la URL sin verificar.
  */
 export async function verificarAcceso(slug: string): Promise<Acceso | null> {
+  const porSesion = await verificarAccesoPorSesion(slug);
+  if (porSesion) return porSesion;
+
   const tienda = await cookies();
   const valor = tienda.get(NOMBRE_COOKIE)?.value;
   if (!valor) return null;

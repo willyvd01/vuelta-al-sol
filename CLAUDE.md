@@ -183,6 +183,43 @@ Protege todo lo que cuelga de `/f/[familia]/...` (vista del mes, ficha de person
 - Tabla `intentos_acceso`: guarda la IP como hash (nunca en claro), RLS activado y sin políticas — solo la usa el servidor con la service role key. Los registros de más de un día se borran en cada intento (sin tarea programada aparte).
 - Mensajes: "Código incorrecto. Te quedan N intentos." y, al llegar al límite, "Demasiados intentos. Vuelve a intentarlo en 15 minutos."
 
+## Panel de administración
+
+`/admin/...`. Se construye en cuatro partes (6a–6d); una a la vez, con confirmación entre cada una (ver "Plan por fases").
+
+**Generales**
+
+- Diseño con la misma estética del álbum (tokens, tipografías) pero funcional ante todo, y que sirva bien en celular: muchos familiares suben recuerdos desde el teléfono.
+- Las operaciones usan el cliente de Supabase con la sesión del usuario (cookies de Auth vía `@supabase/ssr`), para que la seguridad por filas (RLS) decida qué puede hacer cada quien — nunca la service role key para leer o escribir datos de familias/personas/recuerdos en nombre del usuario.
+- La service role key solo se usa en el servidor para: procesar fotos (Storage + sharp) y crear cuentas de colaboradores — y siempre después de comprobar con el cliente de sesión que quien lo pide es admin de esa familia.
+- Si el usuario tiene sesión de Supabase Auth y es miembro (admin o colaborador) de la familia, el álbum `/f/[familia]/...` no le pide el código de acceso: `verificarAcceso()` primero intenta por sesión (una consulta protegida por RLS: si vuelve vacía, no es miembro) y solo si eso falla, cae al código con cookie firmada.
+- Todo `/admin` lleva `noindex`, igual que `/f/`.
+
+**6a — Sesión y familias**
+
+- `/admin/entrar`: correo y contraseña (Supabase Auth). El registro público está desactivado; las cuentas las crea un admin (ver 6d) o se crean a mano en Supabase.
+- Todo lo demás bajo `/admin` exige sesión; sin ella, redirige a `/admin/entrar`.
+- `/admin`: familias donde el usuario es miembro (la propia consulta a `familias` ya queda filtrada por RLS) y botón "Crear familia" (llama a `crear_familia`).
+- `/admin/[familia]`: resumen con cuántas personas cumplen años en cada uno de los 12 meses, y accesos a Personas, Recuerdos, Ajustes y "Ver álbum" (abre `/f/[familia]/[mes actual]`).
+- `/admin/[familia]/ajustes`: nombre, monograma y cambiar el código de acceso — con una advertencia antes de guardar: cambiarlo obliga a todos a escribir el código nuevo (sube `codigo_version`).
+
+**6b — Personas y fotos**
+
+- Lista de personas agrupada por mes. Formulario: nombres, apellidos, día y mes (listas desplegables), año opcional, parentesco, casilla "fallecida".
+- Foto: acepta JPG, PNG y WebP. HEIC (fotos de iPhone que no se convirtieron) da un mensaje claro pidiendo JPG. Recorte cuadrado en pantalla, con arrastre y zoom. Si la zona recortada queda por debajo de 1000 × 1000 px, se rechaza con una explicación.
+- Las fotos suben directo del navegador a Storage con una URL de subida firmada (Vercel limita a unos 4,5 MB lo que pasa por el servidor). Después, el servidor procesa con sharp: aplica el recorte, corrige la orientación EXIF, quita los metadatos (incluida la ubicación GPS), y guarda `original.jpg` a resolución completa y `web.webp` de 800 px.
+
+**6c — Recuerdos**
+
+- Lista de recuerdos por año. Formulario: fecha, título, historia, lugar, personas (casillas con buscador) y varias fotos, reordenables — la primera es la portada.
+- Mismo procesamiento de fotos que en personas, pero sin recorte y con la versión web a 1600 px en el lado mayor.
+- Permisos: el colaborador crea recuerdos y edita los suyos; solo el admin borra (ya están las políticas de RLS para esto en `schema.sql`).
+
+**6d — Colaboradores**
+
+- En Ajustes: lista de miembros con su rol. El admin crea un colaborador con nombre y correo; el sistema genera una contraseña temporal que se muestra una sola vez para compartirla fuera de la app. El colaborador puede cambiarla al entrar.
+- El admin puede quitar miembros, pero no puede quitarse a sí mismo si es el único admin de la familia.
+
 ## Plan por fases
 
 Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencillo qué se hizo, cómo probarlo, y espera confirmación antes de seguir.

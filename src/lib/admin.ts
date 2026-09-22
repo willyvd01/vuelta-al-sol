@@ -1,0 +1,51 @@
+import "server-only";
+import { redirect, notFound } from "next/navigation";
+import { crearClienteServidor } from "./supabase-server";
+
+/** Exige sesión de Supabase Auth; si no hay, manda a /admin/entrar. */
+export async function requerirSesion() {
+  const supabase = await crearClienteServidor();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/admin/entrar");
+
+  return { supabase, user };
+}
+
+export interface FamiliaAdmin {
+  id: string;
+  nombre: string;
+  slug: string;
+  monograma: string | null;
+}
+
+/**
+ * Exige sesión y membresía en la familia del slug. La consulta a
+ * `familias` ya queda filtrada por RLS (`es_miembro`), así que si vuelve
+ * vacía, da igual si es porque el slug no existe o porque el usuario no
+ * pertenece a ella: 404 en ambos casos.
+ */
+export async function requerirMiembro(slug: string) {
+  const { supabase, user } = await requerirSesion();
+
+  const { data: familia } = await supabase
+    .from("familias")
+    .select("id, nombre, slug, monograma")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (!familia) notFound();
+
+  const { data: miembro } = await supabase
+    .from("miembros")
+    .select("rol")
+    .eq("familia_id", familia.id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (!miembro) notFound();
+
+  return { supabase, user, familia: familia as FamiliaAdmin, esAdmin: miembro.rol === "admin" };
+}
