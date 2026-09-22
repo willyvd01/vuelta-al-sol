@@ -17,3 +17,10 @@
   max-width: 320px;
   accent-color: var(--bronce);
 }
+
+.cargando {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--secundario);
+}

@@ -204,6 +204,7 @@ export function FormularioPersona({
 
         {archivo ? (
           <RecortadorFoto
+            key={`${archivo.name}-${archivo.lastModified}-${archivo.size}`}
             archivo={archivo}
             onCambio={(c, e) => {
               setCorte(c);
