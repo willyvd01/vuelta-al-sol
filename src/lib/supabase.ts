@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -11,4 +12,4 @@ if (!url || !anonKey) {
 
 // Cliente para el navegador y componentes de servidor sin privilegios especiales.
 // Respeta las políticas de seguridad por fila (RLS) de cada tabla.
-export const supabase = createClient(url, anonKey);
+export const supabase = createClient<Database>(url, anonKey);
