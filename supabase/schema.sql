@@ -34,6 +34,13 @@ exception when others then
   return false;
 end $$;
 
+-- Sin espacios en los extremos, en minúsculas. La usan crear_familia,
+-- cambiar_codigo_acceso y verificar_codigo_familia.
+create or replace function public.normalizar_codigo(texto text)
+returns text language sql immutable as $$
+  select lower(trim(texto));
+$$;
+
 -- Mismos cortes que signoZodiacal() en src/lib/zodiaco.ts
 create or replace function public.signo_zodiacal(m smallint, d smallint)
 returns text language sql immutable as $$
@@ -64,6 +71,7 @@ create table public.familias (
                      check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),   -- va en la URL del QR
   monograma          text,                                        -- p. ej. 'W&W' para la marca de agua
   codigo_acceso_hash text not null,                               -- nunca guardar el código en claro
+  codigo_version     int not null default 1,                      -- sube al cambiar el código; invalida cookies viejas
   creada_en          timestamptz not null default now()
 );
 
@@ -138,6 +146,19 @@ create table public.ediciones (
   unique (familia_id, numero)
 );
 
+-- Límite de intentos al código de acceso. La IP se guarda como hash,
+-- nunca en claro. Sin políticas de RLS: solo el servidor, con la
+-- service role key, la usa (ver más abajo).
+create table public.intentos_acceso (
+  id         uuid primary key default gen_random_uuid(),
+  ip_hash    text not null,
+  familia_id uuid references public.familias(id) on delete cascade,
+  exitoso    boolean not null,
+  creado_en  timestamptz not null default now()
+);
+create index intentos_acceso_ip_creado      on public.intentos_acceso (ip_hash, creado_en);
+create index intentos_acceso_familia_creado on public.intentos_acceso (familia_id, creado_en);
+
 -- ---------------------------------------------------------------------
 -- Identificadores permanentes: están impresos en los QR
 -- ---------------------------------------------------------------------
@@ -199,7 +220,7 @@ begin
     raise exception 'El código de acceso debe tener al menos 6 caracteres';
   end if;
   insert into familias (nombre, slug, monograma, codigo_acceso_hash)
-  values (p_nombre, p_slug, p_monograma, crypt(p_codigo_acceso, gen_salt('bf')))
+  values (p_nombre, p_slug, p_monograma, crypt(public.normalizar_codigo(p_codigo_acceso), gen_salt('bf')))
   returning id into nueva;
   insert into miembros (familia_id, user_id, rol) values (nueva, auth.uid(), 'admin');
   return nueva;
@@ -215,15 +236,21 @@ begin
   if length(coalesce(p_codigo, '')) < 6 then
     raise exception 'El código de acceso debe tener al menos 6 caracteres';
   end if;
-  update familias set codigo_acceso_hash = crypt(p_codigo, gen_salt('bf')) where id = p_familia;
+  update familias
+  set codigo_acceso_hash = crypt(public.normalizar_codigo(p_codigo), gen_salt('bf')),
+      codigo_version = codigo_version + 1
+  where id = p_familia;
 end $$;
 
--- Verificar el código que escribe quien escanea el QR.
+-- Verificar el código que escribe quien escanea el QR. Devuelve también
+-- codigo_version, para firmar la cookie de sesión con ella.
 -- Solo la llama el servidor de Next.js (service role), nunca el navegador.
 create or replace function public.verificar_codigo_familia(p_slug text, p_codigo text)
-returns uuid language sql stable security definer set search_path = public, extensions as $$
-  select id from familias
-  where slug = p_slug and codigo_acceso_hash = crypt(p_codigo, codigo_acceso_hash);
+returns table(id uuid, codigo_version int)
+language sql stable security definer set search_path = public, extensions as $$
+  select familias.id, familias.codigo_version from familias
+  where slug = p_slug
+    and codigo_acceso_hash = crypt(public.normalizar_codigo(p_codigo), codigo_acceso_hash);
 $$;
 
 revoke execute on function public.crear_familia(text, text, text, text) from public, anon;
@@ -247,6 +274,7 @@ alter table public.recuerdos         enable row level security;
 alter table public.recuerdo_personas enable row level security;
 alter table public.recuerdo_fotos    enable row level security;
 alter table public.ediciones         enable row level security;
+alter table public.intentos_acceso   enable row level security;
 
 create policy familias_ver    on public.familias for select to authenticated using (public.es_miembro(id));
 create policy familias_editar on public.familias for update to authenticated

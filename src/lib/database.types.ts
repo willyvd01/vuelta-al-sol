@@ -49,6 +49,7 @@ export type Database = {
       familias: {
         Row: {
           codigo_acceso_hash: string
+          codigo_version: number
           creada_en: string
           id: string
           monograma: string | null
@@ -57,6 +58,7 @@ export type Database = {
         }
         Insert: {
           codigo_acceso_hash: string
+          codigo_version?: number
           creada_en?: string
           id?: string
           monograma?: string | null
@@ -65,6 +67,7 @@ export type Database = {
         }
         Update: {
           codigo_acceso_hash?: string
+          codigo_version?: number
           creada_en?: string
           id?: string
           monograma?: string | null
@@ -72,6 +75,38 @@ export type Database = {
           slug?: string
         }
         Relationships: []
+      }
+      intentos_acceso: {
+        Row: {
+          creado_en: string
+          exitoso: boolean
+          familia_id: string | null
+          id: string
+          ip_hash: string
+        }
+        Insert: {
+          creado_en?: string
+          exitoso: boolean
+          familia_id?: string | null
+          id?: string
+          ip_hash: string
+        }
+        Update: {
+          creado_en?: string
+          exitoso?: boolean
+          familia_id?: string | null
+          id?: string
+          ip_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intentos_acceso_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       miembros: {
         Row: {
@@ -305,10 +340,14 @@ export type Database = {
       es_admin: { Args: { fid: string }; Returns: boolean }
       es_miembro: { Args: { fid: string }; Returns: boolean }
       fecha_valida: { Args: { d: number; m: number }; Returns: boolean }
+      normalizar_codigo: { Args: { texto: string }; Returns: string }
       signo_zodiacal: { Args: { d: number; m: number }; Returns: string }
       verificar_codigo_familia: {
         Args: { p_codigo: string; p_slug: string }
-        Returns: string
+        Returns: {
+          codigo_version: number
+          id: string
+        }[]
       }
     }
     Enums: {

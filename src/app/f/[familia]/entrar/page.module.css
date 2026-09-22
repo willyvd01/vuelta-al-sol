@@ -1,0 +1,46 @@
+.pagina {
+  position: relative;
+  min-height: 100dvh;
+  background: var(--marfil);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contenido {
+  position: relative;
+  z-index: 1;
+  background: var(--marfil);
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+  padding: 40px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.sol {
+  width: 38px;
+  height: 38px;
+  color: var(--sol);
+}
+
+.titulo {
+  margin: 4px 0 0;
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 26px;
+  color: var(--tinta);
+}
+
+.instruccion {
+  margin: 0 0 6px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--secundario);
+}

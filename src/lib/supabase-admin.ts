@@ -69,6 +69,105 @@ export async function obtenerFamiliaPorSlug(slug: string) {
   return data;
 }
 
+// Para usar después de verificar el acceso: nunca confíes en el slug de la
+// URL para decidir qué datos mostrar, solo en el id que trae la cookie firmada.
+export async function obtenerFamiliaPorId(id: string) {
+  const { data, error } = await admin
+    .from("familias")
+    .select("id, nombre, slug, monograma, codigo_version")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return {
+    id: data.id,
+    nombre: data.nombre,
+    slug: data.slug,
+    monograma: data.monograma,
+    codigoVersion: data.codigo_version,
+  };
+}
+
+export async function verificarCodigoFamilia(
+  slug: string,
+  codigo: string
+): Promise<{ id: string; codigoVersion: number } | null> {
+  const { data, error } = await admin.rpc("verificar_codigo_familia", {
+    p_slug: slug,
+    p_codigo: codigo,
+  });
+  if (error) throw new Error(error.message);
+  const fila = data?.[0];
+  if (!fila) return null;
+  return { id: fila.id, codigoVersion: fila.codigo_version };
+}
+
+export async function registrarIntentoAcceso(
+  ipHash: string,
+  familiaId: string | null,
+  exitoso: boolean
+): Promise<void> {
+  const { error } = await admin
+    .from("intentos_acceso")
+    .insert({ ip_hash: ipHash, familia_id: familiaId, exitoso });
+  if (error) throw new Error(error.message);
+}
+
+export async function contarFallosPorIp(
+  ipHash: string,
+  desde: string
+): Promise<number> {
+  const { count, error } = await admin
+    .from("intentos_acceso")
+    .select("id", { count: "exact", head: true })
+    .eq("ip_hash", ipHash)
+    .eq("exitoso", false)
+    .gte("creado_en", desde);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export async function contarFallosPorFamilia(
+  familiaId: string,
+  desde: string
+): Promise<number> {
+  const { count, error } = await admin
+    .from("intentos_acceso")
+    .select("id", { count: "exact", head: true })
+    .eq("familia_id", familiaId)
+    .eq("exitoso", false)
+    .gte("creado_en", desde);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export async function limpiarIntentosViejos(): Promise<void> {
+  const haceUnDia = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  await admin.from("intentos_acceso").delete().lt("creado_en", haceUnDia);
+}
+
+const MENSAJE_BLOQUEO = "Demasiados intentos. Vuelve a intentarlo en 15 minutos.";
+
+export async function verificarLimiteIntentos(
+  ipHash: string,
+  familiaId: string | null
+): Promise<{ permitido: true } | { permitido: false; mensaje: string }> {
+  await limpiarIntentosViejos();
+
+  const hace15min = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+  const fallosIp = await contarFallosPorIp(ipHash, hace15min);
+  if (fallosIp >= 5) return { permitido: false, mensaje: MENSAJE_BLOQUEO };
+
+  if (familiaId) {
+    const haceUnaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const fallosFamilia = await contarFallosPorFamilia(familiaId, haceUnaHora);
+    if (fallosFamilia >= 30) return { permitido: false, mensaje: MENSAJE_BLOQUEO };
+  }
+
+  return { permitido: true };
+}
+
 const DURACION_URL_FIRMADA = 60 * 10; // 10 minutos, solo dura lo que dura la visita
 
 export async function obtenerPersonasDelMes(

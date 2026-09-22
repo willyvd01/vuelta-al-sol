@@ -1,9 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
-import { obtenerFamiliaPorSlug, obtenerPersonasDelMes } from "@/lib/supabase-admin";
+import { obtenerFamiliaPorId, obtenerPersonasDelMes } from "@/lib/supabase-admin";
+import { verificarAcceso } from "@/lib/acceso";
 import { MESES, obtenerMes, traduccionesVisibles, mesEnUrl } from "@/lib/meses";
 import { SIGNOS, ZODIACO_ICONOS, signosDelMes, rangoSigno, type SignoClave } from "@/lib/zodiaco";
 import { IconoFlecha, IconoPersona } from "@/components/iconos";
@@ -38,10 +39,15 @@ export default async function VistaDelMes({
   if (!MES_EN_URL.test(mesParam)) notFound();
   const numeroMes = Number(mesParam);
 
-  const familia = await obtenerFamiliaPorSlug(familiaSlug);
+  const acceso = await verificarAcceso(familiaSlug);
+  if (!acceso) {
+    const siguiente = encodeURIComponent(`/f/${familiaSlug}/${mesParam}`);
+    redirect(`/f/${familiaSlug}/entrar?siguiente=${siguiente}`);
+  }
+  const familia = await obtenerFamiliaPorId(acceso.familiaId);
   if (!familia) notFound();
 
-  const personas = await obtenerPersonasDelMes(familia.id, numeroMes);
+  const personas = await obtenerPersonasDelMes(acceso.familiaId, numeroMes);
 
   const info = obtenerMes(numeroMes);
   const traducciones = traduccionesVisibles(numeroMes);

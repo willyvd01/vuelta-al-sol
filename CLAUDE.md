@@ -141,7 +141,7 @@ Portadas (el cliente elige una):
 - **Rejilla de 3 columnas:** foto cuadrada (`foto_web` con URL firmada; sin foto → fondo `--foto-vacia` con ícono de persona en línea), nombre en Cormorant 500, debajo el día, el nombre del signo y su ícono pequeño en bronce. Cada tarjeta enlaza a `/f/[familia]/p/[codigo]`. Orden según las reglas del calendario.
 - Al final, la tira de los 12 meses con el actual resaltado en bronce; cada mes enlaza directo a esa página.
 - Sin cumpleaños ese mes: mensaje elegante "Nadie cumple años en [mes]", con la navegación intacta.
-- Mes fuera de 01–12 o familia desconocida: página 404.
+- Mes fuera de 01–12: página 404. Familia desconocida: la puerta de acceso (ver "Acceso al álbum"), nunca un 404 — así no se distingue de un código equivocado.
 - Ningún texto menor a 11 px.
 - Los datos se consultan en el servidor (`src/lib/supabase-admin.ts`, con la service role key); nada de esa llave llega al navegador. Las fotos se muestran con URL firmadas de corta duración generadas también en el servidor.
 
@@ -156,9 +156,32 @@ Portadas (el cliente elige una):
 - Filete y sección "Recuerdos", agrupados por año del más reciente al más antiguo. Cada año con su número en Cormorant bronce y una línea fina.
 - **Cada recuerdo:** fotos (si hay varias, carrusel horizontal que se desliza con el dedo; al tocar una foto se abre en grande con botón de cerrar), título en Cormorant, fecha y lugar en rótulo, historia en Jost 15 px con buen interlineado. Si aparecen otras personas, "Con: [nombres]", cada nombre enlazado a su ficha.
 - Sin recuerdos: "Aún no hay recuerdos de [nombre]".
-- 404 si el código no existe, o si la persona pertenece a otra familia distinta a la de la URL.
+- 404 si el código no existe, o si la persona pertenece a otra familia distinta a la del acceso ya verificado (nunca a la del slug de la URL sin verificar).
 - Título de la pestaña: "[Nombre] — Vuelta al Sol". Todas las páginas bajo `/f/` (incluida la vista del mes) llevan `noindex` — no deben aparecer en buscadores.
 - Mismo patrón de datos que la vista del mes: se consultan en el servidor con la service role key; las fotos, con URL firmadas.
+
+## Acceso al álbum
+
+Protege todo lo que cuelga de `/f/[familia]/...` (vista del mes, ficha de persona, y lo que se agregue después). La página de entrada es la única excepción.
+
+**Flujo**
+
+- Cualquier página bajo `/f/[familia]/...` sin un acceso válido redirige a `/f/[familia]/entrar?siguiente=<ruta original>`. `siguiente` se valida: debe empezar por `/f/[familia]/`, si no, se ignora (evita abrir redirecciones a otros sitios).
+- La página de entrada nunca revela si la familia existe ni muestra su nombre: con un slug inventado se ve exactamente igual y el código simplemente falla. Diseño: marfil, marca de agua, el sol pequeño, "Vuelta al Sol", "Escribe el código de tu familia", un campo grande y el botón "Entrar".
+- Campo de código: texto visible (no contraseña), tamaño de fuente ≥16 px (para que Safari en iPhone no haga zoom al enfocar), sin mayúscula automática ni autocorrector.
+- El código se normaliza (recorta espacios, minúsculas) tanto al guardarlo como al verificarlo — en la base de datos, con `normalizar_codigo()`.
+
+**Verificación y cookie**
+
+- El servidor llama a `verificar_codigo_familia(slug, codigo)` con la service role key. Si es correcto, firma una cookie con HMAC (variable `ACCESO_SECRETO` en `.env.local`, nunca en el repo ni en el chat): `httpOnly`, `secure` en producción, `sameSite lax`, ruta `/f/[familia]`, un año de duración.
+- La cookie guarda el id de la familia y `familias.codigo_version`. Cambiar el código (`cambiar_codigo_acceso`) incrementa esa columna, así que la cookie vieja deja de coincidir y cierra la sesión en todos los teléfonos a la vez.
+- Toda función que lee datos de una familia recibe el id que viene de la cookie ya verificada (`verificarAcceso()` en `src/lib/acceso.ts`), nunca el slug de la URL directamente. La cookie de una familia no sirve para otra: aunque alguien reenvíe la cookie bajo otro slug, el id que lleva dentro no coincide y el acceso se rechaza.
+
+**Límite de intentos**
+
+- Máximo 5 intentos fallidos por IP cada 15 minutos, y 30 fallidos por familia cada hora.
+- Tabla `intentos_acceso`: guarda la IP como hash (nunca en claro), RLS activado y sin políticas — solo la usa el servidor con la service role key. Los registros de más de un día se borran en cada intento (sin tarea programada aparte).
+- Mensajes: "Código incorrecto. Te quedan N intentos." y, al llegar al límite, "Demasiados intentos. Vuelve a intentarlo en 15 minutos."
 
 ## Plan por fases
 

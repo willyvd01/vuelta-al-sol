@@ -34,3 +34,23 @@ export function IconoPersona({ className }: { className?: string }) {
     </svg>
   );
 }
+
+// Versión pequeña del sol de la portada A: un círculo con rayos cortos.
+export function IconoSol({ className }: { className?: string }) {
+  const rayos = Array.from({ length: 8 }, (_, i) => {
+    const angulo = (i * Math.PI * 2) / 8;
+    const x1 = 12 + Math.cos(angulo) * 8.5;
+    const y1 = 12 + Math.sin(angulo) * 8.5;
+    const x2 = 12 + Math.cos(angulo) * 11;
+    const y2 = 12 + Math.sin(angulo) * 11;
+    return (
+      <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} />
+    );
+  });
+  return (
+    <svg {...base} className={className}>
+      <circle cx="12" cy="12" r="5.5" />
+      {rayos}
+    </svg>
+  );
+}

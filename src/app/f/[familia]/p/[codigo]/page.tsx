@@ -1,14 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
 import {
-  obtenerFamiliaPorSlug,
+  obtenerFamiliaPorId,
   obtenerPersonaPorCodigo,
   obtenerRecuerdosDePersona,
   type Recuerdo,
 } from "@/lib/supabase-admin";
+import { verificarAcceso } from "@/lib/acceso";
 import {
   mesEnUrl,
   obtenerMes,
@@ -30,11 +31,17 @@ type Params = { familia: string; codigo: string };
 async function cargarFicha(params: Promise<Params>) {
   const { familia: familiaSlug, codigo } = await params;
 
-  const familia = await obtenerFamiliaPorSlug(familiaSlug);
+  const acceso = await verificarAcceso(familiaSlug);
+  if (!acceso) {
+    const siguiente = encodeURIComponent(`/f/${familiaSlug}/p/${codigo}`);
+    redirect(`/f/${familiaSlug}/entrar?siguiente=${siguiente}`);
+  }
+
+  const familia = await obtenerFamiliaPorId(acceso.familiaId);
   if (!familia) notFound();
 
   const persona = await obtenerPersonaPorCodigo(codigo);
-  if (!persona || persona.familiaId !== familia.id) notFound();
+  if (!persona || persona.familiaId !== acceso.familiaId) notFound();
 
   return { familiaSlug, familia, persona };
 }
@@ -44,11 +51,9 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { familia: familiaSlug, codigo } = await params;
-  const familia = await obtenerFamiliaPorSlug(familiaSlug);
-  if (!familia) return {};
+  const { codigo } = await params;
   const persona = await obtenerPersonaPorCodigo(codigo);
-  if (!persona || persona.familiaId !== familia.id) return {};
+  if (!persona) return {};
   return { title: `${persona.nombres} ${persona.apellidos} — Vuelta al Sol` };
 }
 
