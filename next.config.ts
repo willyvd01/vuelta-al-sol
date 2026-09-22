@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Sin esto, Next.js bloquea en desarrollo las peticiones (incluida la
+  // conexión de recarga en caliente) que llegan por una IP de red distinta
+  // a "localhost" — por eso los botones no respondían al probar desde el
+  // celular o desde http://192.168.0.8:3000.
+  allowedDevOrigins: ["192.168.0.8"],
   images: {
     remotePatterns: [
       {
