@@ -218,7 +218,7 @@ Protege todo lo que cuelga de `/f/[familia]/...` (vista del mes, ficha de person
 **6d — Colaboradores**
 
 - En Ajustes: lista de miembros con su rol. El admin crea un colaborador con nombre y correo; el sistema genera una contraseña temporal que se muestra una sola vez para compartirla fuera de la app. El colaborador puede cambiarla al entrar.
-- El admin puede quitar miembros, pero no puede quitarse a sí mismo si es el único admin de la familia.
+- El admin puede quitar miembros, pero no puede quitarse a sí mismo si es el único admin de la familia. Esto se valida en pantalla (`quitarMiembroAction`) y además lo impide un trigger en la base (`proteger_ultimo_admin`, migración 004): ninguna familia puede quedar sin al menos un admin, venga el cambio de donde venga.
 
 ## Plan por fases
 
@@ -250,3 +250,4 @@ Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencill
 - Datos de enero: apellido de Yorla; confirmar si son dos personas llamadas Wilson Tabares (19 y 20).
 - Precio y forma de venta.
 - Hoy cualquier usuario con sesión puede crear familias (`crear_familia` solo exige `auth.uid()`), incluidos los colaboradores. Antes de vender hay que definir quién puede hacerlo y reforzarlo en la base de datos, no solo ocultando el botón en la pantalla.
+- Durante la Fase 6, la membresía de admin de Wilmar en la familia `demo` desapareció de la tabla `miembros` sin que se pudiera determinar la causa: se revisó `quitarMiembroAction` (nunca se ejecutó contra su cuenta) y el resto de scripts corridos en esa sesión (ninguno toca `miembros`). Sospecha sin confirmar: el script `hacer-admin.mjs` original no verificó con `.select()` que el `upsert` realmente insertara la fila. Vigilar si se repite — si vuelve a pasar, revisar los logs de Supabase (Dashboard → Logs → Postgres/API) en el momento exacto.
