@@ -1,0 +1,17 @@
+@import "../styles/tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--marfil);
+  color: var(--tinta);
+  font-family: var(--font-jost), sans-serif;
+}

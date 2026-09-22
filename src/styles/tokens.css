@@ -1,0 +1,12 @@
+:root {
+  --marfil: #faf8f4; /* fondo de páginas */
+  --tinta: #1c1a17; /* texto principal; fondo de la portada A */
+  --bronce: #8a6d3f; /* acento: días, filete del marco, íconos, mes activo */
+  --filete: #d9d2c6; /* líneas divisorias */
+  --secundario: #6e675c; /* rótulos y texto secundario */
+  --foto-vacia: #edeae4; /* fondo de retrato sin foto */
+  --marca-agua: #ece5d8; /* monograma sobre marfil */
+  --marca-agua-oscura: #27241f; /* monograma sobre la portada oscura */
+  --oro: #b9a57e; /* líneas y texto de la portada A */
+  --sol: #c9b28a; /* el sol de la portada A */
+}
