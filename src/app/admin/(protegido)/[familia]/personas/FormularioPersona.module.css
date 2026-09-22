@@ -1,0 +1,123 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 420px;
+}
+
+.etiqueta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secundario);
+}
+
+.filaFecha {
+  display: flex;
+  gap: 12px;
+}
+
+.filaFecha > * {
+  flex: 1;
+}
+
+.campo {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--tinta);
+  background: var(--marfil);
+  border: 1px solid var(--filete);
+}
+
+.campo:focus {
+  outline: none;
+  border-color: var(--bronce);
+}
+
+.casilla {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 14px;
+  color: var(--tinta);
+}
+
+.seccionFoto {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--filete);
+}
+
+.etiquetaFoto {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secundario);
+}
+
+.fotoActual {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  background: var(--foto-vacia);
+}
+
+.campoArchivo {
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--tinta);
+}
+
+.boton {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 12px 24px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--marfil);
+  background: var(--bronce);
+  border: none;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.botonSecundario {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  background: transparent;
+  border: 1px solid var(--filete);
+  cursor: pointer;
+}
+
+.error {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  color: #a1503f;
+}

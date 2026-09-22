@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import sharp from "sharp";
 import type { Database } from "./database.types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -319,4 +320,85 @@ export async function obtenerRecuerdosDePersona(
       };
     })
   );
+}
+
+// ---------------------------------------------------------------------
+// Fotos: el navegador sube el archivo original a una ruta temporal con
+// una URL de subida firmada (evita el límite de ~4.5 MB de Vercel).
+// Desde aquí, siempre con la service role key y solo después de
+// comprobar que quien lo pide es admin, sharp procesa esa foto: corrige
+// la orientación EXIF, recorta si aplica, quita todos los metadatos
+// (nunca se llama a withMetadata(), así que la ubicación GPS también
+// se pierde) y guarda las versiones finales.
+// ---------------------------------------------------------------------
+
+async function descargarFoto(ruta: string): Promise<Buffer> {
+  const { data, error } = await admin.storage.from("fotos").download(ruta);
+  if (error) throw new Error(error.message);
+  return Buffer.from(await data.arrayBuffer());
+}
+
+async function subirFotoProcesada(
+  ruta: string,
+  datos: Buffer,
+  contentType: string
+): Promise<void> {
+  const { error } = await admin.storage
+    .from("fotos")
+    .upload(ruta, datos, { contentType, upsert: true });
+  if (error) throw new Error(error.message);
+}
+
+async function borrarFotos(rutas: string[]): Promise<void> {
+  if (rutas.length === 0) return;
+  await admin.storage.from("fotos").remove(rutas);
+}
+
+export interface RectanguloCorte {
+  x: number;
+  y: number;
+  tamano: number;
+}
+
+/**
+ * Recorte cuadrado de una persona: guarda original.jpg a la resolución
+ * del recorte (para imprimir) y web.webp de 800 px (para el álbum).
+ */
+export async function procesarFotoPersona(
+  familiaId: string,
+  personaId: string,
+  rutaTemporal: string,
+  corte: RectanguloCorte
+): Promise<{ original: string; web: string }> {
+  const crudo = await descargarFoto(rutaTemporal);
+
+  const orientada = sharp(crudo).rotate(); // corrige la orientación EXIF
+
+  const original = await orientada
+    .extract({
+      left: Math.round(corte.x),
+      top: Math.round(corte.y),
+      width: Math.round(corte.tamano),
+      height: Math.round(corte.tamano),
+    })
+    .jpeg({ quality: 92 })
+    .toBuffer();
+
+  const web = await sharp(original).resize(800, 800).webp({ quality: 85 }).toBuffer();
+
+  const rutaOriginal = `${familiaId}/personas/${personaId}/original.jpg`;
+  const rutaWeb = `${familiaId}/personas/${personaId}/web.webp`;
+
+  await subirFotoProcesada(rutaOriginal, original, "image/jpeg");
+  await subirFotoProcesada(rutaWeb, web, "image/webp");
+  await borrarFotos([rutaTemporal]);
+
+  return { original: rutaOriginal, web: rutaWeb };
+}
+
+export async function borrarFotosDePersona(familiaId: string, personaId: string): Promise<void> {
+  await borrarFotos([
+    `${familiaId}/personas/${personaId}/original.jpg`,
+    `${familiaId}/personas/${personaId}/web.webp`,
+  ]);
 }

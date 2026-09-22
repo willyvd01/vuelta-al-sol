@@ -1,0 +1,19 @@
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.area {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  height: 320px;
+  background: var(--tinta);
+}
+
+.zoom {
+  width: 100%;
+  max-width: 320px;
+  accent-color: var(--bronce);
+}
