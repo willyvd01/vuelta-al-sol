@@ -1,0 +1,88 @@
+.portada {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  background: var(--tinta);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22mm 14mm;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.nombreFamilia {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  color: var(--oro);
+}
+
+.rueda {
+  width: 195mm;
+  height: 195mm;
+  flex-shrink: 0;
+}
+
+.bloqueTitulo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.nuestra {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 50px;
+  color: #d9cbb0;
+}
+
+.tituloGrande {
+  margin: 4px 0 0;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 300;
+  font-size: 116px;
+  line-height: 1.05;
+  color: #f3eee4;
+}
+
+.subtitulo {
+  margin: 10px 0 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: var(--oro);
+}
+
+.pie {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.monograma {
+  font-family: var(--font-cormorant), serif;
+  font-size: 16px;
+  color: var(--oro);
+}
+
+.filete {
+  width: 1px;
+  height: 14px;
+  background: var(--oro);
+}
+
+.edicion {
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--oro);
+}

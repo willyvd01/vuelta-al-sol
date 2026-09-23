@@ -1,0 +1,81 @@
+@page {
+  size: 297mm 420mm;
+  margin: 0;
+}
+
+.titulo {
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 26px;
+  margin: 0 0 6px;
+}
+
+.ayuda {
+  margin: 0 0 20px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--secundario);
+  max-width: 46em;
+}
+
+/* Escala fija solo para revisar el contenido en pantalla: la hoja real
+   mide 297 × 420 mm (ver @page arriba) y solo se ve a tamaño real al
+   imprimir o exportar a PDF (@media print, más abajo). */
+.miniatura {
+  position: relative;
+  width: calc(297mm * 0.4);
+  height: calc(420mm * 0.4);
+  margin: 0 auto 20px;
+  overflow: hidden;
+  border: 1px solid var(--filete);
+}
+
+.hoja {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 297mm;
+  height: 420mm;
+  transform: scale(0.4);
+  transform-origin: top left;
+}
+
+@media print {
+  /* El encabezado y la navegación de /admin/[familia] no deben imprimirse;
+     el <main> que envuelve esta página pierde su ancho máximo y su relleno
+     para que las hojas, ya a tamaño real, no queden descuadradas. */
+  :global(header) {
+    display: none !important;
+  }
+
+  :global(main) {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .titulo,
+  .ayuda {
+    display: none;
+  }
+
+  .miniatura {
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    border: none;
+  }
+
+  .hoja {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    break-after: page;
+  }
+
+  .miniatura:last-child .hoja {
+    break-after: auto;
+  }
+}

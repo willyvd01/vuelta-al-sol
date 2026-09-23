@@ -125,10 +125,20 @@ Medidas a 96 ppp → milímetros:
 - **Pie:** texto "Escanea para abrir [mes] en el álbum digital", tira con los 12 meses (el actual relleno en bronce con texto marfil) y el QR del mes de 23 × 23 mm
 - Imprimir colores de fondo: `print-color-adjust: exact`
 
-Portadas (el cliente elige una):
+**Portada: A — Rueda solar** (decidido; la opción B, retrato familiar en arco, queda descartada por ahora). Fondo `--tinta`, sin marco. Contenido centrado, de arriba abajo: nombre de la familia en rótulo oro, la rueda, el bloque de título, y al pie el monograma con la edición.
 
-- **A — Rueda solar:** fondo tinta; en el centro, sol con 24 rayos, órbita punteada con un pequeño planeta, anillo con los 12 meses y anillo exterior con los 12 signos. Título "Nuestra" (itálica) / "Vuelta al Sol".
-- **B — Retrato familiar:** fondo marfil, foto familiar en arco, sol pequeño, mismo título.
+**Geometría exacta de la rueda** (SVG propio, no es contenido de usuarios): `viewBox 0 0 760 760`, centro en `(380, 380)`, todo sin relleno y trazo color oro `#B9A57E` salvo donde se indique lo contrario.
+
+1. Dos círculos exteriores concéntricos: radio 366 (trazo 1,1) y radio 356 (trazo 0,6).
+2. Los 12 íconos de `ZODIACO_ICONOS` a radio 312, cada uno como `<g transform="translate(x-22, y-22) scale(1.833)">` con trazo 0,8 (fill none, stroke `#B9A57E` directo, no `currentColor`). Ángulo de cada ícono: empieza en -105° (capricornio) y suma 30° por signo, en el orden capricornio, acuario, piscis, aries, tauro, géminis, cáncer, leo, virgo, libra, escorpio, sagitario.
+3. Círculo de radio 266 (trazo 0,9).
+4. Escala de 60 marcas cada 6° desde -105°: la marca de cada 5 (i % 5 === 0 → coincide con el ángulo de cada ícono del zodiaco) va de radio 250 a 266 con trazo 1,1; las otras 48, de radio 258 a 266 con trazo 0,6.
+5. Abreviaturas de los 12 meses (`MESES[].abreviatura`) a radio 226, centradas (`text-anchor: middle`, centrado también vertical) en los ángulos -90° + 30° × (número de mes − 1) — es decir, enero en -90°, independiente de los ángulos del zodiaco. Jost 13 px, `letter-spacing` 2,5 px, relleno oro.
+6. Círculo de radio 200 (trazo 0,6).
+7. Órbita: círculo de radio 154, trazo 1,2, punteado (`stroke-dasharray: 0.1 7`, extremos redondeados). Un planeta encima: círculo relleno marfil `#F3EEE4` de radio 7, sobre la órbita en el ángulo -38°.
+8. El sol: círculo relleno `#C9B28A` de radio 50 en el centro (sin trazo), y 24 rayos cada 15° desde radio 64, alternando largo (hasta 100) y corto (hasta 84), trazo 1,5 oro.
+
+**Texto de la portada** (debajo de la rueda salvo el nombre de familia, que va arriba de todo): "Nuestra" en Cormorant itálica 50 px color `#D9CBB0`; el título en Cormorant 300 de 116 px color `#F3EEE4` — el texto del título ("Vuelta al Sol") es provisional y vive en una sola constante (`NOMBRE_PRODUCTO` en `src/lib/producto.ts`) para poder cambiarlo sin tocar el componente; debajo, rótulo Jost 12 px espaciado oro "Cumpleaños y recuerdos de la familia". Al pie: el monograma de la familia en Cormorant, un filete vertical, y el número de edición en palabras ("Primera edición", "Segunda edición"…), calculado como una más que el número de filas ya guardadas en `ediciones` para esa familia.
 
 ## Vista del mes (celular)
 
@@ -182,6 +192,18 @@ Protege todo lo que cuelga de `/f/[familia]/...` (vista del mes, ficha de person
 - Máximo 5 intentos fallidos por IP cada 15 minutos, y 30 fallidos por familia cada hora.
 - Tabla `intentos_acceso`: guarda la IP como hash (nunca en claro), RLS activado y sin políticas — solo la usa el servidor con la service role key. Los registros de más de un día se borran en cada intento (sin tarea programada aparte).
 - Mensajes: "Código incorrecto. Te quedan N intentos." y, al llegar al límite, "Demasiados intentos. Vuelve a intentarlo en 15 minutos."
+
+## Vista de impresión (Fase 7)
+
+`/admin/[familia]/imprimir`. La ve cualquier miembro (admin o colaborador), como "Ver álbum"; es de solo lectura salvo el botón de registrar edición (solo admin).
+
+- **En pantalla:** cada hoja A3 (portada y las 12 de mes) se muestra en miniatura a escala fija 0,4 (una hoja verdadera de 297 × 420 mm dentro de un contenedor del mismo tamaño escalado, con `transform: scale`), apiladas en una lista vertical dentro del panel — es solo para revisar el contenido, no hace falta que se vea a tamaño real en pantalla.
+- **Para imprimir/exportar:** un botón "Guardar como PDF" llama a `window.print()`. En `@media print`, cada hoja vuelve a su tamaño real (297 × 420 mm, sin escala) y con `page-break-after: always` (una hoja = una página); el encabezado y la navegación del panel (`<header>` del layout de `[familia]`) se ocultan, y el `<main>` que envuelve el contenido pierde su `max-width`/relleno para que las hojas no queden descuadradas. No hay generación de PDF en servidor todavía (queda para después, según el plan).
+- **Registrar edición:** botón aparte, solo para admin, que inserta una fila en `ediciones` (`numero` = uno más que las que ya existen para esa familia, `notas` opcional) — deja constancia de que se imprimió un lote, sin intentar detectar automáticamente si la persona canceló el diálogo de impresión.
+- **Fotos:** siempre `foto_original` (nunca `foto_web`), con el cliente de sesión del admin (RLS), igual que el resto del panel — nunca la service role key.
+- **QR de cada mes:** se genera en el servidor como SVG (paquete `qrcode`), apunta a `/f/[familia]/[mes]` bajo el origen (protocolo + host) de la propia petición — así funciona igual en `localhost`, en la IP de red y en el dominio real que se defina en la Fase 8, sin variables de entorno nuevas que mantener mientras tanto.
+- **Meses con más de 9 personas:** se reparten en dos hojas seguidas, manteniendo el orden de las reglas del calendario (la primera hoja se lleva `ceil(n/2)`, la segunda el resto); ambas repiten la cabecera y el pie del mes, y la etiqueta pequeña de la cabecera ("01 — [nombre de la familia]") suma " · 1/2" / " · 2/2".
+- **Etiqueta de cabecera de cada página de mes:** "01 — [nombre de la familia]" del diseño aprobado se arma como `{número de mes a dos dígitos} — {familias.nombre}`.
 
 ## Panel de administración
 
@@ -245,8 +267,7 @@ Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencill
 - Plan de Supabase al lanzar: el gratuito pausa proyectos inactivos, y el álbum se abre de vez en cuando.
 - Cómo se señala a una persona fallecida.
 - Si los recuerdos de colaboradores necesitan aprobación del admin.
-- Nombre definitivo del producto (se trabaja con "Vuelta al Sol").
-- Portada A o B.
+- Nombre definitivo del producto (se trabaja con "Vuelta al Sol"; la constante `NOMBRE_PRODUCTO` en `src/lib/producto.ts` centraliza el texto de la portada para cuando se decida).
 - Datos de enero: apellido de Yorla; confirmar si son dos personas llamadas Wilson Tabares (19 y 20).
 - Precio y forma de venta.
 - Hoy cualquier usuario con sesión puede crear familias (`crear_familia` solo exige `auth.uid()`), incluidos los colaboradores. Antes de vender hay que definir quién puede hacerlo y reforzarlo en la base de datos, no solo ocultando el botón en la pantalla.

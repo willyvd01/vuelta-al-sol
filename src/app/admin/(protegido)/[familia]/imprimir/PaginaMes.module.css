@@ -1,0 +1,259 @@
+.pagina {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding: 17mm 10.6mm 10.6mm;
+  background: var(--marfil);
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
+.marco {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--bronce);
+  padding: 8.5mm;
+  display: flex;
+  flex-direction: column;
+}
+
+.etiquetaPagina {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--bronce);
+}
+
+.filaCabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 8mm;
+  margin-top: 2mm;
+  padding-bottom: 6mm;
+  border-bottom: 1px solid var(--filete);
+}
+
+.nombreMes {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 300;
+  font-size: 112px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+}
+
+.traducciones {
+  margin: 6px 0 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  color: var(--secundario);
+}
+
+.signosCabecera {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.signoCab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+}
+
+.signoCab:first-child {
+  padding-left: 0;
+}
+
+.signoCab:not(:first-child) {
+  border-left: 1px solid var(--filete);
+}
+
+.iconoSignoCab {
+  width: 18px;
+  height: 18px;
+  color: var(--bronce);
+  flex-shrink: 0;
+}
+
+.nombreSignoCab {
+  color: var(--tinta);
+}
+
+.rangoSignoCab {
+  color: var(--secundario);
+}
+
+.rejilla {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  column-gap: 5.8mm;
+  row-gap: 5.3mm;
+  margin-top: 8mm;
+  list-style: none;
+  padding: 0;
+}
+
+.cols2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.cols3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* El ancho de columna no siempre alcanza para que la foto sea cuadrada
+   Y quepan todas las filas en los 420 mm de la hoja (pasa con 3 columnas
+   × 3 filas, el caso más apretado): la foto crece con flex:1 dentro de su
+   fila ya repartida en partes iguales (grid-template-rows, ver PaginaMes.tsx)
+   y se limita con max-width para no desbordar la columna cuando sobra alto. */
+.foto {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  background: var(--foto-vacia);
+  overflow: hidden;
+}
+
+.iconoPersonaVacia {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 30%;
+  height: 30%;
+  color: var(--secundario);
+}
+
+.barra {
+  height: 17mm;
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+}
+
+.dia {
+  flex-shrink: 0;
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-size: 42px;
+  line-height: 1;
+  color: var(--bronce);
+}
+
+.infoPersona {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.nombrePersona {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1.15;
+  color: var(--tinta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.signoPersona {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--bronce);
+}
+
+.iconoSignoPersona {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.pie {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8mm;
+  margin-top: 8mm;
+  padding-top: 5mm;
+  border-top: 1px solid var(--filete);
+}
+
+.pieTexto {
+  display: flex;
+  flex-direction: column;
+  gap: 4mm;
+  min-width: 0;
+}
+
+.instruccion {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--secundario);
+}
+
+.tiraMeses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5mm;
+}
+
+.mesTira {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 9mm;
+  height: 6mm;
+  padding: 0 2mm;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--secundario);
+}
+
+.mesActivo {
+  background: var(--bronce);
+  color: var(--marfil);
+}
+
+.qr {
+  width: 23mm;
+  height: 23mm;
+  flex-shrink: 0;
+}
+
+.qr svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}

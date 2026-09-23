@@ -30,6 +30,7 @@ export default async function FamiliaAdminLayout({
           <Link href={`/admin/${slug}/personas`}>Personas</Link>
           <Link href={`/admin/${slug}/recuerdos`}>Recuerdos</Link>
           <Link href={`/admin/${slug}/ajustes`}>Ajustes</Link>
+          <Link href={`/admin/${slug}/imprimir`}>Imprimir</Link>
           <Link href={`/f/${slug}/${mesActual}`}>Ver álbum</Link>
         </nav>
       </header>

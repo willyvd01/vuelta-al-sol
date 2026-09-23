@@ -1,0 +1,75 @@
+.barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.boton {
+  min-height: 44px;
+  padding: 12px 24px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--marfil);
+  background: var(--bronce);
+  border: none;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.botonSecundario {
+  min-height: 44px;
+  padding: 10px 16px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  background: transparent;
+  border: 1px solid var(--filete);
+  cursor: pointer;
+}
+
+.confirmacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.campoNotas {
+  padding: 10px 12px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--tinta);
+  background: var(--marfil);
+  border: 1px solid var(--filete);
+  min-width: 220px;
+}
+
+.mensaje {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  color: var(--secundario);
+}
+
+.error {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  color: #a1503f;
+}
+
+@media print {
+  .barra {
+    display: none;
+  }
+}
