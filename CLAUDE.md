@@ -242,8 +242,8 @@ Columnas nuevas, opcionales, en `personas` y `recuerdos`: `autor_nombre text`, `
 - Máximo 10 fotos por recuerdo, 15 MB por foto (el panel no tiene este límite explícito porque lo sube un admin de confianza; aquí sí, porque es de cualquiera con el código).
 - Mismo procesamiento que en el panel (`procesarFotoRecuerdo`): versión original y web, sin metadatos de ubicación.
 - Bajo cada recuerdo: "Agregado por [nombre]" — el nombre sale de `autor_nombre` si lo creó un visitante, o del nombre del miembro (`user_metadata.nombre`, vía `creado_por`) si lo creó alguien del panel. Quien lo creó (mismo `autor_token`, o su propia sesión) ve "Editar"; un miembro con cuenta ve además "Borrar", sin importar quién lo creó; nadie más ve ningún control.
-- Aquí es donde se amplía la política de RLS de `recuerdos` (ver el cambio de permisos más arriba): cualquier miembro edita y borra, no solo el admin.
-- Aviso en el panel (Resumen o Ajustes) cuando el Storage de la familia pase de un umbral — el número exacto se define al construir esta parte, mirando el precio real de Supabase Storage.
+- Aquí es donde se amplía la política de RLS de `recuerdos` (migración 006): cualquier miembro **edita** el de cualquiera, no solo el admin. Borrar se queda como estaba (solo admin) hasta la Fase 9d, que construye la papelera — no tenía sentido ampliar ese permiso todavía sin el borrado suave.
+- Aviso en el panel (Resumen) cuando el Storage de la familia pase de 800 MB (deja margen antes del 1 GB del plan Free). Se calcula al vuelo listando las carpetas de esa familia en Storage, no con un contador aparte: a la escala de fotos de una familia (decenas o cientos, no miles) es rápido, y así nunca se puede desincronizar de lo que de verdad hay guardado.
 
 ## 9c — Agregar personas desde el álbum
 
@@ -307,7 +307,7 @@ Nosotros (el panel de `/admin`) creamos familias, las configuramos (Ajustes) y g
 
 - Lista de recuerdos por año. Formulario: fecha, título, historia, lugar, personas (casillas con buscador) y varias fotos, reordenables — la primera es la portada.
 - Mismo procesamiento de fotos que en personas, pero sin recorte y con la versión web a 1600 px en el lado mayor.
-- Permisos: el colaborador crea recuerdos y edita los suyos; solo el admin borra (ya están las políticas de RLS para esto en `schema.sql`).
+- Permisos: desde la Fase 9b, cualquier miembro (admin o colaborador) edita el recuerdo de cualquiera, no solo el suyo (migración 006). Borrar se queda solo para el admin hasta la Fase 9d (papelera).
 
 **6d — Colaboradores**
 

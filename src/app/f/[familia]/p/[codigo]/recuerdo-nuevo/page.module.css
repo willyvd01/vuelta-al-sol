@@ -1,0 +1,7 @@
+.titulo {
+  margin: 20px 0 24px;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 26px;
+  color: var(--tinta);
+}

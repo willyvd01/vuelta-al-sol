@@ -10,6 +10,7 @@ import {
   type Recuerdo,
 } from "@/lib/supabase-admin";
 import { verificarAcceso } from "@/lib/acceso";
+import { identificarVisitante, puedeEditar } from "@/lib/autoria";
 import {
   mesEnUrl,
   obtenerMes,
@@ -44,7 +45,7 @@ async function cargarFicha(params: Promise<Params>) {
   const persona = await obtenerPersonaPorCodigo(codigo);
   if (!persona || persona.familiaId !== acceso.familiaId) notFound();
 
-  return { familiaSlug, familia, persona };
+  return { familiaSlug, familia, persona, familiaId: acceso.familiaId };
 }
 
 export async function generateMetadata({
@@ -77,12 +78,11 @@ export default async function FichaPersona({
 }: {
   params: Promise<Params>;
 }) {
-  const { familiaSlug, familia, persona } = await cargarFicha(params);
-  const recuerdos = await obtenerRecuerdosDePersona(
-    familia.id,
-    persona.id,
-    persona.codigo
-  );
+  const { familiaSlug, familia, persona, familiaId } = await cargarFicha(params);
+  const [recuerdos, autor] = await Promise.all([
+    obtenerRecuerdosDePersona(familia.id, persona.id, persona.codigo),
+    identificarVisitante(familiaId),
+  ]);
   const grupos = agruparPorAnio(recuerdos);
 
   const signo = SIGNOS[persona.signo as SignoClave];
@@ -153,7 +153,12 @@ export default async function FichaPersona({
         {textoEdadPersona && <p className={styles.edad}>{textoEdadPersona}</p>}
 
         <div className={styles.filete} />
-        <h2 className={styles.tituloSeccion}>Recuerdos</h2>
+        <div className={styles.cabeceraRecuerdos}>
+          <h2 className={styles.tituloSeccion}>Recuerdos</h2>
+          <Link href={`/f/${familiaSlug}/p/${persona.codigo}/recuerdo-nuevo`} className={styles.botonAgregar}>
+            Agregar un recuerdo de {persona.nombres}
+          </Link>
+        </div>
 
         {grupos.length === 0 ? (
           <p className={styles.vacio}>
@@ -194,6 +199,16 @@ export default async function FichaPersona({
                       ))}
                     </p>
                   )}
+                  <p className={styles.pieRecuerdo}>
+                    {recuerdo.autorNombre && <span>Agregado por {recuerdo.autorNombre}</span>}
+                    {puedeEditar(autor, recuerdo) && (
+                      <Link
+                        href={`/f/${familiaSlug}/recuerdos/${recuerdo.id}/editar?volver=${encodeURIComponent(`/f/${familiaSlug}/p/${persona.codigo}`)}`}
+                      >
+                        Editar
+                      </Link>
+                    )}
+                  </p>
                 </article>
               ))}
             </section>

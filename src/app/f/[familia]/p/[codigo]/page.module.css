@@ -89,13 +89,35 @@
   margin: 28px 0 16px;
 }
 
+.cabeceraRecuerdos {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
 .tituloSeccion {
-  margin: 0 0 20px;
+  margin: 0;
   font-family: var(--font-cormorant), serif;
   font-style: italic;
   font-weight: 400;
   font-size: 20px;
   color: var(--tinta);
+}
+
+.botonAgregar {
+  align-self: flex-start;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bronce);
+  border: 1px solid var(--filete);
+  text-decoration: none;
 }
 
 .vacio {
@@ -175,5 +197,20 @@
 }
 
 .conQuien a {
+  color: var(--bronce);
+}
+
+.pieRecuerdo {
+  margin: 2px 0 0;
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--secundario);
+}
+
+.pieRecuerdo a {
   color: var(--bronce);
 }

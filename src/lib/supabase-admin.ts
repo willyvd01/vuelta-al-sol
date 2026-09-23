@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import sharp from "sharp";
 import type { Database } from "./database.types";
+import type { AutorAlbum } from "./autoria";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -58,6 +59,9 @@ export interface Recuerdo {
   lugar: string | null;
   fotos: FotoRecuerdo[];
   otrasPersonas: PersonaEnRecuerdo[];
+  autorNombre: string | null;
+  creadoPor: string | null;
+  autorToken: string | null;
 }
 
 export async function obtenerFamiliaPorSlug(slug: string) {
@@ -215,6 +219,24 @@ export async function verificarLimiteAportes(
 
 const DURACION_URL_FIRMADA = 60 * 10; // 10 minutos, solo dura lo que dura la visita
 
+export interface PersonaOpcion {
+  id: string;
+  codigo: string;
+  nombres: string;
+  apellidos: string;
+}
+
+/** Lista liviana (sin fotos) de toda la familia, para etiquetar personas en un recuerdo. */
+export async function obtenerTodasLasPersonas(familiaId: string): Promise<PersonaOpcion[]> {
+  const { data, error } = await admin
+    .from("personas")
+    .select("id, codigo, nombres, apellidos")
+    .eq("familia_id", familiaId)
+    .order("nombres", { ascending: true });
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
 export async function obtenerPersonasDelMes(
   familiaId: string,
   mes: number
@@ -298,6 +320,9 @@ interface FilaRecuerdo {
   titulo: string;
   historia: string | null;
   lugar: string | null;
+  creado_por: string | null;
+  autor_nombre: string | null;
+  autor_token: string | null;
   recuerdo_fotos: {
     ruta_web: string;
     ancho: number | null;
@@ -316,7 +341,7 @@ export async function obtenerRecuerdosDePersona(
   const { data, error } = await admin
     .from("recuerdos")
     .select(
-      `id, fecha, titulo, historia, lugar,
+      `id, fecha, titulo, historia, lugar, creado_por, autor_nombre, autor_token,
        recuerdo_fotos ( ruta_web, ancho, alto, orden ),
        participantes:recuerdo_personas ( personas ( codigo, nombres, apellidos ) ),
        filtro:recuerdo_personas!inner ( persona_id )`
@@ -330,6 +355,11 @@ export async function obtenerRecuerdosDePersona(
   if (!data) return [];
 
   const filas = data as unknown as FilaRecuerdo[];
+
+  // Los "agregado por [nombre]" de quien tiene cuenta salen de su perfil,
+  // no de una columna propia: se resuelven todos de una vez.
+  const idsUsuarios = [...new Set(filas.map((f) => f.creado_por).filter((id): id is string => !!id))];
+  const nombresUsuarios = idsUsuarios.length > 0 ? await obtenerDatosDeUsuarios(idsUsuarios) : new Map();
 
   return Promise.all(
     filas.map(async (fila) => {
@@ -353,6 +383,9 @@ export async function obtenerRecuerdosDePersona(
         )
         .sort((a, b) => a.nombres.localeCompare(b.nombres, "es"));
 
+      const autorNombre =
+        fila.autor_nombre ?? (fila.creado_por ? nombresUsuarios.get(fila.creado_por)?.nombre ?? null : null);
+
       return {
         id: fila.id,
         fecha: fila.fecha,
@@ -361,6 +394,9 @@ export async function obtenerRecuerdosDePersona(
         lugar: fila.lugar,
         fotos: fotos.filter((f) => f.url),
         otrasPersonas,
+        autorNombre,
+        creadoPor: fila.creado_por,
+        autorToken: fila.autor_token,
       };
     })
   );
@@ -456,9 +492,14 @@ export async function procesarFotoRecuerdo(
   familiaId: string,
   recuerdoId: string,
   fotoId: string,
-  rutaTemporal: string
+  rutaTemporal: string,
+  limiteBytes?: number
 ): Promise<{ original: string; web: string; ancho: number; alto: number }> {
   const crudo = await descargarFoto(rutaTemporal);
+  if (limiteBytes && crudo.length > limiteBytes) {
+    await borrarFotos([rutaTemporal]);
+    throw new Error(`Esa foto pesa más de ${Math.round(limiteBytes / (1024 * 1024))} MB.`);
+  }
 
   const original = await sharp(crudo).rotate().jpeg({ quality: 92 }).toBuffer();
   const web = await sharp(original)
@@ -479,6 +520,198 @@ export async function procesarFotoRecuerdo(
 
 export async function borrarFotosDeRecuerdo(rutas: string[]): Promise<void> {
   await borrarFotos(rutas);
+}
+
+// ---------------------------------------------------------------------
+// Recuerdos desde el álbum (Fase 9b): a diferencia del panel, quien
+// escribe puede no tener sesión — así que todo esto usa la service role
+// key y cada función valida explícitamente lo que le toca (familia, en
+// vez de RLS). Son funciones angostas a propósito: mejor varias
+// pequeñas y explícitas que una que reciba el cliente de servicio suelto.
+// ---------------------------------------------------------------------
+
+export async function crearSubidaFotoRecuerdoAlbum(
+  familiaId: string
+): Promise<{ path: string; token: string }> {
+  const ruta = `${familiaId}/recuerdos/tmp-${crypto.randomUUID()}`;
+  const { data, error } = await admin.storage.from("fotos").createSignedUploadUrl(ruta);
+  if (error) throw new Error(error.message);
+  return { path: data.path, token: data.token };
+}
+
+/**
+ * Filtra una lista de ids de persona a solo los que de verdad son de esa
+ * familia, devolviendo también su código (para revalidar su ficha).
+ */
+export async function validarPersonasDeFamilia(
+  familiaId: string,
+  personaIds: string[]
+): Promise<Map<string, string>> {
+  if (personaIds.length === 0) return new Map();
+  const { data, error } = await admin
+    .from("personas")
+    .select("id, codigo")
+    .eq("familia_id", familiaId)
+    .in("id", personaIds);
+  if (error) throw new Error(error.message);
+  return new Map((data ?? []).map((p) => [p.id, p.codigo]));
+}
+
+export async function crearRecuerdoAlbum(
+  familiaId: string,
+  datos: { fecha: string; titulo: string; historia: string | null; personaIds: string[] },
+  autor: AutorAlbum
+): Promise<string> {
+  const { data, error } = await admin
+    .from("recuerdos")
+    .insert({
+      familia_id: familiaId,
+      fecha: datos.fecha,
+      titulo: datos.titulo,
+      historia: datos.historia,
+      creado_por: autor.creadoPor,
+      autor_nombre: autor.autorNombre,
+      autor_token: autor.autorToken,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+
+  if (datos.personaIds.length > 0) {
+    const { error: errorTags } = await admin
+      .from("recuerdo_personas")
+      .insert(datos.personaIds.map((persona_id) => ({ recuerdo_id: data.id, persona_id })));
+    if (errorTags) throw new Error(errorTags.message);
+  }
+  return data.id;
+}
+
+export interface RecuerdoParaEditarAlbum {
+  id: string;
+  familiaId: string;
+  fecha: string;
+  titulo: string;
+  historia: string | null;
+  creadoPor: string | null;
+  autorToken: string | null;
+  personaIds: string[];
+  fotos: { id: string; url: string }[];
+}
+
+/** Trae lo necesario para editar: nadie puede editar sin ver esto primero, así que aquí no se filtra por permiso — eso lo decide quien llama. */
+export async function obtenerRecuerdoParaEditarAlbum(
+  recuerdoId: string
+): Promise<RecuerdoParaEditarAlbum | null> {
+  const { data, error } = await admin
+    .from("recuerdos")
+    .select(
+      `id, familia_id, fecha, titulo, historia, creado_por, autor_token,
+       recuerdo_personas ( persona_id ),
+       recuerdo_fotos ( id, ruta_web, orden )`
+    )
+    .eq("id", recuerdoId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  const fotosOrdenadas = [...data.recuerdo_fotos].sort((a, b) => a.orden - b.orden);
+  const fotosConUrl = await Promise.all(
+    fotosOrdenadas.map(async (f) => {
+      const { data: firmada } = await admin.storage
+        .from("fotos")
+        .createSignedUrl(f.ruta_web, DURACION_URL_FIRMADA);
+      return { id: f.id, url: firmada?.signedUrl ?? "" };
+    })
+  );
+
+  return {
+    id: data.id,
+    familiaId: data.familia_id,
+    fecha: data.fecha,
+    titulo: data.titulo,
+    historia: data.historia,
+    creadoPor: data.creado_por,
+    autorToken: data.autor_token,
+    personaIds: data.recuerdo_personas.map((p) => p.persona_id),
+    fotos: fotosConUrl.filter((f) => f.url),
+  };
+}
+
+export async function actualizarRecuerdoAlbum(
+  recuerdoId: string,
+  datos: { fecha: string; titulo: string; historia: string | null; personaIds: string[] }
+): Promise<void> {
+  const { error } = await admin
+    .from("recuerdos")
+    .update({ fecha: datos.fecha, titulo: datos.titulo, historia: datos.historia })
+    .eq("id", recuerdoId);
+  if (error) throw new Error(error.message);
+
+  const { data: actuales } = await admin
+    .from("recuerdo_personas")
+    .select("persona_id")
+    .eq("recuerdo_id", recuerdoId);
+  const idsActuales = new Set((actuales ?? []).map((r) => r.persona_id));
+  const idsNuevos = new Set(datos.personaIds);
+
+  const aAgregar = datos.personaIds.filter((id) => !idsActuales.has(id));
+  if (aAgregar.length > 0) {
+    await admin
+      .from("recuerdo_personas")
+      .insert(aAgregar.map((persona_id) => ({ recuerdo_id: recuerdoId, persona_id })));
+  }
+  const aQuitar = [...idsActuales].filter((id) => !idsNuevos.has(id));
+  if (aQuitar.length > 0) {
+    await admin.from("recuerdo_personas").delete().eq("recuerdo_id", recuerdoId).in("persona_id", aQuitar);
+  }
+}
+
+export async function contarFotosRecuerdo(recuerdoId: string): Promise<number> {
+  const { count, error } = await admin
+    .from("recuerdo_fotos")
+    .select("id", { count: "exact", head: true })
+    .eq("recuerdo_id", recuerdoId);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export async function guardarFotoRecuerdoAlbum(datos: {
+  fotoId: string;
+  recuerdoId: string;
+  familiaId: string;
+  original: string;
+  web: string;
+  ancho: number;
+  alto: number;
+  orden: number;
+}): Promise<void> {
+  const { error } = await admin.from("recuerdo_fotos").insert({
+    id: datos.fotoId,
+    recuerdo_id: datos.recuerdoId,
+    familia_id: datos.familiaId,
+    ruta_original: datos.original,
+    ruta_web: datos.web,
+    ancho: datos.ancho,
+    alto: datos.alto,
+    orden: datos.orden,
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function reordenarFotoRecuerdoAlbum(fotoId: string, orden: number): Promise<void> {
+  const { error } = await admin.from("recuerdo_fotos").update({ orden }).eq("id", fotoId);
+  if (error) throw new Error(error.message);
+}
+
+export async function borrarFotosRecuerdoAlbumPorId(fotoIds: string[]): Promise<void> {
+  if (fotoIds.length === 0) return;
+  const { data: aBorrar } = await admin
+    .from("recuerdo_fotos")
+    .select("id, ruta_original, ruta_web")
+    .in("id", fotoIds);
+  const { error } = await admin.from("recuerdo_fotos").delete().in("id", fotoIds);
+  if (error) throw new Error(error.message);
+  if (aBorrar) await borrarFotosDeRecuerdo(aBorrar.flatMap((f) => [f.ruta_original, f.ruta_web]));
 }
 
 // ---------------------------------------------------------------------
@@ -524,4 +757,37 @@ export async function obtenerDatosDeUsuarios(
     })
   );
   return resultado;
+}
+
+// ---------------------------------------------------------------------
+// Almacenamiento (Fase 9b): se calcula al vuelo listando Storage en vez
+// de llevar un contador aparte — con el tamaño de familia de este
+// producto (decenas o cientos de fotos, no miles) es rápido, y así nunca
+// se puede desincronizar de lo que de verdad hay guardado.
+// ---------------------------------------------------------------------
+
+export const UMBRAL_STORAGE_AVISO_BYTES = 800 * 1024 * 1024; // 800 MB: deja margen antes del 1 GB del plan Free
+
+async function tamanoDeCarpeta(prefijo: string): Promise<number> {
+  const { data, error } = await admin.storage.from("fotos").list(prefijo, { limit: 1000 });
+  if (error || !data) return 0;
+
+  let total = 0;
+  for (const item of data) {
+    if (item.id) {
+      total += item.metadata?.size ?? 0;
+    } else {
+      // Sin id ni metadata: es una subcarpeta (personas/{id}, recuerdos/{id}).
+      total += await tamanoDeCarpeta(`${prefijo}/${item.name}`);
+    }
+  }
+  return total;
+}
+
+export async function calcularStorageUsadoFamilia(familiaId: string): Promise<number> {
+  const [personas, recuerdos] = await Promise.all([
+    tamanoDeCarpeta(`${familiaId}/personas`),
+    tamanoDeCarpeta(`${familiaId}/recuerdos`),
+  ]);
+  return personas + recuerdos;
 }

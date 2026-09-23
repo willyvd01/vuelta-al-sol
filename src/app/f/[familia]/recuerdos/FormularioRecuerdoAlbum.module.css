@@ -1,0 +1,176 @@
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.etiqueta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secundario);
+}
+
+.campo {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--tinta);
+  background: var(--marfil);
+  border: 1px solid var(--filete);
+}
+
+.campo:focus {
+  outline: none;
+  border-color: var(--bronce);
+}
+
+textarea.campo {
+  resize: vertical;
+}
+
+.seccion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--filete);
+}
+
+.tituloSeccion {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secundario);
+}
+
+/* Selector de personas */
+
+.selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.listaSelector {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid var(--filete);
+  padding: 8px 12px;
+}
+
+.casillaPersona {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 14px;
+  color: var(--tinta);
+}
+
+/* Galería de fotos */
+
+.galeria {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sinFotos {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--secundario);
+}
+
+.listaFotos {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.fotoItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fotoMiniatura {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--foto-vacia);
+  overflow: hidden;
+}
+
+.etiquetaPortada {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--marfil);
+  background: var(--bronce);
+}
+
+.botonQuitar {
+  min-height: 32px;
+  padding: 4px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  color: var(--secundario);
+  background: transparent;
+  border: 1px solid var(--filete);
+  cursor: pointer;
+}
+
+.campoArchivo {
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--tinta);
+}
+
+.boton {
+  min-height: 48px;
+  padding: 14px 24px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--marfil);
+  background: var(--bronce);
+  border: none;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  color: #a1503f;
+}

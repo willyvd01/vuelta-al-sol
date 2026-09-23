@@ -348,8 +348,7 @@ create policy recuerdos_ver     on public.recuerdos for select to authenticated 
 create policy recuerdos_agregar on public.recuerdos for insert to authenticated
   with check (public.es_miembro(familia_id) and creado_por = auth.uid());
 create policy recuerdos_editar  on public.recuerdos for update to authenticated
-  using (public.es_admin(familia_id) or creado_por = auth.uid())
-  with check (public.es_miembro(familia_id));
+  using (public.es_miembro(familia_id)) with check (public.es_miembro(familia_id));
 create policy recuerdos_borrar  on public.recuerdos for delete to authenticated using (public.es_admin(familia_id));
 
 create policy rp_ver on public.recuerdo_personas for select to authenticated using (
@@ -363,7 +362,7 @@ create policy rp_agregar on public.recuerdo_personas for insert to authenticated
             and public.es_miembro(r.familia_id)));
 create policy rp_quitar on public.recuerdo_personas for delete to authenticated using (
   exists (select 1 from public.recuerdos r
-          where r.id = recuerdo_personas.recuerdo_id and public.es_admin(r.familia_id)));
+          where r.id = recuerdo_personas.recuerdo_id and public.es_miembro(r.familia_id)));
 
 create policy rf_ver on public.recuerdo_fotos for select to authenticated using (public.es_miembro(familia_id));
 create policy rf_agregar on public.recuerdo_fotos for insert to authenticated with check (
@@ -371,12 +370,7 @@ create policy rf_agregar on public.recuerdo_fotos for insert to authenticated wi
   and exists (select 1 from public.recuerdos r
               where r.id = recuerdo_fotos.recuerdo_id and r.familia_id = recuerdo_fotos.familia_id));
 create policy rf_editar on public.recuerdo_fotos for update to authenticated
-  using (
-    public.es_admin(familia_id)
-    or exists (select 1 from public.recuerdos r
-               where r.id = recuerdo_fotos.recuerdo_id and r.creado_por = auth.uid())
-  )
-  with check (public.es_miembro(familia_id));
+  using (public.es_miembro(familia_id)) with check (public.es_miembro(familia_id));
 create policy rf_borrar on public.recuerdo_fotos for delete to authenticated using (public.es_admin(familia_id));
 
 create policy ediciones_ver     on public.ediciones for select to authenticated using (public.es_miembro(familia_id));
