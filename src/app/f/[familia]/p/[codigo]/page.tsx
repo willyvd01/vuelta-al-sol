@@ -153,6 +153,12 @@ export default async function FichaPersona({
 
         {textoEdadPersona && <p className={styles.edad}>{textoEdadPersona}</p>}
 
+        {puedeEditar(autor, { creadoPor: null, autorToken: persona.autorToken }) && (
+          <Link href={`/f/${familiaSlug}/p/${persona.codigo}/editar`} className={styles.enlaceEditarPersona}>
+            Editar
+          </Link>
+        )}
+
         <div className={styles.filete} />
         <div className={styles.cabeceraRecuerdos}>
           <h2 className={styles.tituloSeccion}>Recuerdos</h2>

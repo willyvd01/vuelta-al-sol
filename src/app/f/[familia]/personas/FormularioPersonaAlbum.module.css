@@ -50,6 +50,13 @@
   flex: 1;
 }
 
+.fotoActual {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  background: var(--foto-vacia);
+}
+
 .seccionFoto {
   display: flex;
   flex-direction: column;

@@ -2,12 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { verificarAcceso, obtenerIp, hashIp } from "@/lib/acceso";
-import { resolverAutorEscritura } from "@/lib/autoria";
+import { resolverAutorEscritura, identificarVisitante, puedeEditar } from "@/lib/autoria";
 import {
   crearSubidaFotoPersonaAlbum,
   buscarPersonasParecidas,
   crearPersonaAlbum,
+  actualizarPersonaAlbum,
   guardarFotoPersonaAlbum,
+  obtenerPersonaPorCodigo,
   procesarFotoPersona,
   verificarLimiteAportes,
   registrarAporte,
@@ -99,6 +101,71 @@ export async function guardarPersonaAlbumAction(
   await registrarAporte(await hashIp(ip), familiaId);
 
   revalidatePath(`/f/${slug}/${mesEnUrl(mes)}`);
+
+  return { error: null };
+}
+
+/**
+ * Solo quien la agregó (mismo autor_token) o un miembro con cuenta puede
+ * corregir una persona. Sin revisión de duplicados: eso solo aplica a
+ * crear una nueva.
+ */
+export async function actualizarPersonaAlbumAction(
+  slug: string,
+  codigo: string,
+  formData: FormData
+): Promise<ResultadoGuardarPersona> {
+  const acceso = await verificarAcceso(slug);
+  if (!acceso) return { error: "No tienes acceso a este álbum." };
+  const familiaId = acceso.familiaId;
+
+  const existente = await obtenerPersonaPorCodigo(codigo);
+  if (!existente || existente.familiaId !== familiaId) return { error: "Esa persona ya no existe." };
+
+  const autor = await identificarVisitante(familiaId);
+  if (!puedeEditar(autor, { creadoPor: null, autorToken: existente.autorToken })) {
+    return { error: "Solo quien la agregó (o un miembro de la familia) puede editarla." };
+  }
+
+  const nombres = String(formData.get("nombres") ?? "").trim();
+  const apellidos = String(formData.get("apellidos") ?? "").trim();
+  const dia = Number(formData.get("dia"));
+  const mes = Number(formData.get("mes"));
+  const anioCrudo = String(formData.get("anio") ?? "").trim();
+  const anio = anioCrudo ? Number(anioCrudo) : null;
+  const parentesco = String(formData.get("parentesco") ?? "").trim() || null;
+  const rutaTemporal = String(formData.get("rutaTemporal") ?? "") || null;
+  const corteCrudo = String(formData.get("corte") ?? "");
+
+  if (!nombres) return { error: "El nombre es obligatorio." };
+  if (!dia || !mes) return { error: "Elige el día y el mes." };
+  if (anioCrudo && (!Number.isInteger(anio) || anio! < 1850 || anio! > 2100)) {
+    return { error: "El año no parece válido." };
+  }
+
+  const cambioDeHoja = (dia !== existente.dia || mes !== existente.mes) && existente.impresa;
+
+  await actualizarPersonaAlbum(
+    existente.id,
+    { nombres, apellidos, dia, mes, anio, parentesco },
+    cambioDeHoja
+  );
+
+  if (rutaTemporal && corteCrudo) {
+    try {
+      const corte = JSON.parse(corteCrudo) as { x: number; y: number; tamano: number };
+      const { original, web } = await procesarFotoPersona(familiaId, existente.id, rutaTemporal, corte);
+      await guardarFotoPersonaAlbum(existente.id, original, web);
+    } catch (e) {
+      return {
+        error: e instanceof Error ? `No se pudo procesar la foto: ${e.message}` : "No se pudo procesar la foto.",
+      };
+    }
+  }
+
+  revalidatePath(`/f/${slug}/p/${codigo}`);
+  revalidatePath(`/f/${slug}/${mesEnUrl(existente.mes)}`);
+  if (mes !== existente.mes) revalidatePath(`/f/${slug}/${mesEnUrl(mes)}`);
 
   return { error: null };
 }

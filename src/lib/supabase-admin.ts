@@ -38,6 +38,7 @@ export interface PersonaFicha extends Persona {
   familiaId: string;
   parentesco: string | null;
   fallecida: boolean;
+  autorToken: string | null;
 }
 
 export interface FotoRecuerdo {
@@ -284,7 +285,7 @@ export async function obtenerPersonaPorCodigo(
   const { data, error } = await admin
     .from("personas")
     .select(
-      "id, codigo, nombres, apellidos, dia, mes, anio, signo, foto_web, familia_id, parentesco, fallecida, impresa_en_edicion"
+      "id, codigo, nombres, apellidos, dia, mes, anio, signo, foto_web, familia_id, parentesco, fallecida, impresa_en_edicion, autor_token"
     )
     .eq("codigo", codigo)
     .maybeSingle();
@@ -314,6 +315,7 @@ export async function obtenerPersonaPorCodigo(
     parentesco: data.parentesco,
     fallecida: data.fallecida,
     impresa: data.impresa_en_edicion !== null,
+    autorToken: data.autor_token,
   };
 }
 
@@ -881,6 +883,39 @@ export async function crearPersonaAlbum(
     .single();
   if (error) throw new Error(error.message);
   return data.id;
+}
+
+/**
+ * `resetearImpresa` se pone en true cuando cambia el día o el mes de
+ * alguien que ya había salido en algún calendario impreso: vuelve a
+ * quedar sin imprimir (cambió de hoja física), y eso reaparece solo en
+ * el aviso de "personas sin imprimir" que ya existe en el panel.
+ */
+export async function actualizarPersonaAlbum(
+  personaId: string,
+  datos: {
+    nombres: string;
+    apellidos: string;
+    dia: number;
+    mes: number;
+    anio: number | null;
+    parentesco: string | null;
+  },
+  resetearImpresa: boolean
+): Promise<void> {
+  const { error } = await admin
+    .from("personas")
+    .update({
+      nombres: datos.nombres,
+      apellidos: datos.apellidos,
+      dia: datos.dia,
+      mes: datos.mes,
+      anio: datos.anio,
+      parentesco: datos.parentesco,
+      ...(resetearImpresa ? { impresa_en_edicion: null } : {}),
+    })
+    .eq("id", personaId);
+  if (error) throw new Error(error.message);
 }
 
 export async function guardarFotoPersonaAlbum(

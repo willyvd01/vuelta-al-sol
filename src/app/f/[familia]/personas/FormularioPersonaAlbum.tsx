@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 import { crearClienteNavegador } from "@/lib/supabase-browser";
 import { MESES, diasDelMes } from "@/lib/meses";
@@ -11,29 +12,43 @@ import {
   crearSubidaFotoPersonaAlbumAction,
   buscarDuplicadosAction,
   guardarPersonaAlbumAction,
+  actualizarPersonaAlbumAction,
 } from "./acciones";
 
 import styles from "./FormularioPersonaAlbum.module.css";
 
 const TIPOS_VALIDOS = ["image/jpeg", "image/png", "image/webp"];
 
+export interface PersonaAlbumExistente {
+  codigo: string;
+  nombres: string;
+  apellidos: string;
+  dia: number;
+  mes: number;
+  anio: number | null;
+  parentesco: string | null;
+  fotoWebUrl: string | null;
+}
+
 export function FormularioPersonaAlbum({
   slug,
   volverA,
   pedirNombre,
   mesInicial,
+  personaExistente,
 }: {
   slug: string;
   volverA: string;
   pedirNombre: boolean;
   mesInicial: number;
+  personaExistente?: PersonaAlbumExistente;
 }) {
   const router = useRouter();
 
   const [nombreVisitante, setNombreVisitante] = useState("");
-  const [nombres, setNombres] = useState("");
-  const [apellidos, setApellidos] = useState("");
-  const [mes, setMes] = useState(mesInicial);
+  const [nombres, setNombres] = useState(personaExistente?.nombres ?? "");
+  const [apellidos, setApellidos] = useState(personaExistente?.apellidos ?? "");
+  const [mes, setMes] = useState(personaExistente?.mes ?? mesInicial);
   const [archivo, setArchivo] = useState<File | null>(null);
   const [corte, setCorte] = useState<{ x: number; y: number; tamano: number } | null>(null);
   const [errorRecorte, setErrorRecorte] = useState<string | null>(null);
@@ -93,7 +108,9 @@ export function FormularioPersonaAlbum({
     }
     formData.set("nombreVisitante", nombreVisitante);
 
-    const resultado = await guardarPersonaAlbumAction(slug, formData);
+    const resultado = personaExistente
+      ? await actualizarPersonaAlbumAction(slug, personaExistente.codigo, formData)
+      : await guardarPersonaAlbumAction(slug, formData);
     if (resultado.error) {
       setError(resultado.error);
       setEnCurso(false);
@@ -120,13 +137,15 @@ export function FormularioPersonaAlbum({
         return;
       }
 
-      const dia = Number(formData.get("dia"));
-      const parecidos = await buscarDuplicadosAction(slug, nombres, apellidos, dia, mes);
-      if (parecidos.length > 0) {
-        setDuplicados(parecidos);
-        setFormPendiente(formData);
-        setEnCurso(false);
-        return;
+      if (!personaExistente) {
+        const dia = Number(formData.get("dia"));
+        const parecidos = await buscarDuplicadosAction(slug, nombres, apellidos, dia, mes);
+        if (parecidos.length > 0) {
+          setDuplicados(parecidos);
+          setFormPendiente(formData);
+          setEnCurso(false);
+          return;
+        }
       }
 
       await subirYGuardar(formData);
@@ -238,7 +257,7 @@ export function FormularioPersonaAlbum({
 
         <label className={styles.etiqueta}>
           Día
-          <select name="dia" defaultValue={1} className={styles.campo}>
+          <select name="dia" defaultValue={personaExistente?.dia ?? 1} className={styles.campo}>
             {Array.from({ length: diasDelMes(mes) }, (_, i) => i + 1).map((d) => (
               <option key={d} value={d}>
                 {d}
@@ -250,7 +269,14 @@ export function FormularioPersonaAlbum({
 
       <label className={styles.etiqueta}>
         Año de nacimiento (opcional)
-        <input type="number" name="anio" min={1850} max={2100} className={styles.campo} />
+        <input
+          type="number"
+          name="anio"
+          min={1850}
+          max={2100}
+          defaultValue={personaExistente?.anio ?? ""}
+          className={styles.campo}
+        />
         <span className={styles.ayuda}>Si lo pones, el álbum mostrará la edad que cumple cada año.</span>
       </label>
 
@@ -259,6 +285,7 @@ export function FormularioPersonaAlbum({
         <input
           type="text"
           name="parentesco"
+          defaultValue={personaExistente?.parentesco ?? ""}
           placeholder="Hija, primo, abuela…"
           className={styles.campo}
         />
@@ -266,6 +293,12 @@ export function FormularioPersonaAlbum({
 
       <div className={styles.seccionFoto}>
         <p className={styles.tituloSeccion}>Foto (opcional)</p>
+
+        {personaExistente?.fotoWebUrl && !archivo && (
+          <div className={styles.fotoActual}>
+            <Image src={personaExistente.fotoWebUrl} alt="" fill style={{ objectFit: "cover" }} sizes="100px" />
+          </div>
+        )}
 
         {archivo ? (
           <RecortadorFoto
