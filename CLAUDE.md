@@ -11,7 +11,7 @@ Un producto con dos caras:
 
 La web también **genera** el calendario físico: exporta cada página a PDF para la imprenta.
 
-Primer cliente: la familia de Wilson. Después se venderá a muchas familias, así que **todo es multifamilia desde el día uno**: cada persona, recuerdo y foto pertenece a una familia.
+Primer cliente: la familia de Wilson. Después se venderá a muchas familias, así que **todo es multifamilia desde el día uno**: cada persona, recuerdo y foto pertenece a una familia. Todas las familias conviven en el **mismo** proyecto de Supabase (una sola base de datos, aislada por fila con RLS según `familia_id`) — vender a una familia nueva es una fila más en `familias`, nunca un proyecto de Supabase aparte.
 
 ## Stack
 
@@ -270,7 +270,7 @@ Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencill
 - [ ] Proyecto de Supabase **nuevo** para producción (no el de pruebas): correr solo `supabase/schema.sql` — ya incluye lo de las tres migraciones, no hace falta correrlas aparte — y no correr `seed.sql` (esa familia `demo` es solo para desarrollo).
 - [ ] Cargar en Vercel las 5 variables de entorno: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (las tres del proyecto de Supabase de producción, no el de pruebas), `ACCESO_SECRETO` (uno nuevo, distinto al de `.env.local`), `NEXT_PUBLIC_SITIO_URL` (el dominio definitivo, sin barra final).
 - [ ] Crear la familia real desde `/admin` (con `crear_familia`) y cargar las personas y fotos reales.
-- [ ] **Subir el plan de Supabase de Free a Pro ($25/mes) — justo antes de entregar el primer calendario impreso, no antes.** Mientras se desarrolla, Free alcanza porque hay actividad diaria y no importa que se pause. Decidido 2026-09-23: ver la investigación completa (pausa a los 7 días de inactividad, reactivación manual, Pro nunca pausa) en el historial de esta conversación.
+- [ ] **Subir el plan de Supabase de Free a Pro ($25/mes) — justo antes de entregar el primer calendario impreso, no antes.** Mientras se desarrolla, Free alcanza porque hay actividad diaria y no importa que se pause. Decidido 2026-09-23: ver la investigación completa (pausa a los 7 días de inactividad, reactivación manual, Pro nunca pausa) en el historial de esta conversación. Además, el plan Free permite solo **2 proyectos activos por cuenta**, y entre el de pruebas y el de producción ya se llega a ese límite — otra razón para no dejarlo todo en Free por mucho tiempo. Esto no es un problema al vender a más familias: todas conviven en el **mismo** proyecto/base de datos de producción (ver "Stack" — multifamilia desde el día uno, con RLS por `familia_id`), así que vender a la familia número 10 o 50 no pide un proyecto de Supabase nuevo, solo una fila más en `familias`.
 - [ ] Entrar a `/admin/[familia]/imprimir` ya en el dominio real y confirmar que **no** sale la advertencia del QR (si sale, `NEXT_PUBLIC_SITIO_URL` está mal puesta o sigue en localhost).
 - [ ] Prueba de impresión real de enero en la imprenta, siguiendo la guía de impresión de esa misma página (A3, 297 × 420 mm, papel opalina o algodón mate 250-300 g, anillado metálico superior con perforación en la franja blanca de 17 mm).
 
