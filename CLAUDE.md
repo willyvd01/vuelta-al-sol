@@ -193,6 +193,77 @@ Protege todo lo que cuelga de `/f/[familia]/...` (vista del mes, ficha de person
 - Tabla `intentos_acceso`: guarda la IP como hash (nunca en claro), RLS activado y sin políticas — solo la usa el servidor con la service role key. Los registros de más de un día se borran en cada intento (sin tarea programada aparte).
 - Mensajes: "Código incorrecto. Te quedan N intentos." y, al llegar al límite, "Demasiados intentos. Vuelve a intentarlo en 15 minutos."
 
+## Qué puede hacer la familia desde el álbum (Fase 9)
+
+Hasta la Fase 8, `/f/[familia]/...` era de solo lectura. Desde la Fase 9, quien tiene el código (o sesión de miembro) puede aportar contenido directamente desde el álbum, no solo desde `/admin`.
+
+**Tabla de permisos**
+
+| Quién | Puede |
+|---|---|
+| Visitante con el código (cookie de acceso, sin cuenta) | Ver todo, agregar recuerdos y personas, editar solo lo que él mismo creó |
+| Miembro con cuenta (admin o colaborador de la familia) | Todo lo anterior, y además edita y borra lo de **cualquiera** |
+| Nadie sin el código y sin sesión | No puede escribir nada |
+
+**Cambio importante respecto a lo ya construido:** en la Fase 6c el colaborador solo editaba lo suyo y no borraba nada; en la 6b, personas era terreno exclusivo del admin. La tabla de arriba lo amplía: de ahora en adelante cualquier miembro con cuenta (admin o colaborador) edita y borra el contenido de cualquiera, tanto recuerdos como personas, y también puede agregar personas — no solo el admin. Como los permisos son una sola capa de RLS compartida entre el álbum y `/admin`, este cambio se nota en los dos lugares. Se implementa en la parte de la Fase 9 (9b o 9c) que primero toque esa tabla, no en la 9a.
+
+**Seguridad — todo esto es nuevo con la Fase 9**
+
+Los visitantes del álbum no tienen usuario de Supabase Auth: la seguridad por filas (RLS) no los protege, porque RLS decide según `auth.uid()` y para ellos siempre es nulo. Por eso, toda escritura que venga de una visita (no de una sesión de miembro) pasa por una acción de servidor que:
+
+1. Verifica la cookie de acceso (`verificarAcceso()`) antes de aceptar nada.
+2. Usa **solo** el id de familia que viene de esa cookie ya verificada — nunca el slug de la URL ni ningún id que mande el formulario — para decidir a qué familia pertenece lo que se guarda.
+3. Para editar o borrar algo existente, comprueba que la fila pertenezca a esa familia y, si quien edita no es un miembro con sesión, que el `autor_token` de la fila coincida con el de la cookie de identidad de quien pide el cambio.
+4. Usa la service role key (se salta RLS a propósito, igual que ya hace el procesamiento de fotos) — la validación queda enteramente en el código de la acción, así que estas son las acciones de mayor cuidado de todo el proyecto.
+5. Respeta un límite de aportes por familia y por hora (ver 9a).
+
+## 9a — Edad e identidad del visitante
+
+**Edad:** ya existía en la ficha de persona (Fase 4) un cálculo simple (`añoActual − año de nacimiento`), sin considerar si el cumpleaños de este año ya pasó. Se ajusta ese mismo cálculo, no uno nuevo:
+
+- Compara el día de hoy en la zona horaria `America/Bogota` (no la del servidor, que puede estar en otro huso) contra el día y mes de la persona.
+- Ya pasó este año → "Cumplió N años el 14 de enero".
+- Todavía no llega → "Cumple N años el 14 de enero".
+- Es hoy → "Hoy cumple N años".
+- Solo se muestra si hay año de nacimiento y la persona no está marcada como fallecida (regla que ya existía).
+- 29 de febrero: en un año que no es bisiesto, se compara como si fuera 28 de febrero (el texto siempre dice "29 de febrero"; solo cambia cuándo se considera "ya pasó").
+- La página ya tiene `export const dynamic = "force-dynamic"` desde la Fase 4: se vuelve a calcular en cada visita, así que ya cumple de sobra con que el año cambie solo — no hace falta agregar una revalidación aparte.
+
+**Identidad del visitante:** la primera vez que alguien sin sesión intenta aportar algo (Fases 9b/9c), el álbum le pide su nombre y lo guarda en una cookie firmada con HMAC — mismo mecanismo y mismo secreto (`ACCESO_SECRETO`) que la cookie de acceso — `httpOnly`, `secure` en producción, `sameSite lax`, ruta `/f/[familia]`, un año de duración. Guarda el nombre y un identificador propio generado en el servidor (`autor_token`). Mientras esa cookie exista, sus aportes nuevos llevan ese mismo token, y es lo que le permite verlos como propios y editarlos.
+
+Columnas nuevas, opcionales, en `personas` y `recuerdos`: `autor_nombre text`, `autor_token text` (quedan vacías en lo creado desde `/admin`, donde ya existe `creado_por` para lo mismo). Migración `005_autor_visitante.sql`, y el cambio también entra a `schema.sql`, que sigue siendo la fuente de verdad para un proyecto nuevo.
+
+**Límite de aportes:** se extiende la tabla `intentos_acceso` (no se crea una nueva) con una columna `tipo text not null default 'acceso'`; ahora también admite filas `tipo = 'aporte'`. Límite propuesto: **20 aportes por familia por hora** (ajustable; los límites de acceso existentes son 5/15 min por IP y 30/hora por familia, este queda en ese mismo orden). Pasado el límite: "Ya se agregaron muchos recuerdos y personas en la última hora. Intenta de nuevo más tarde." Reutiliza el mismo patrón de conteo por familia que ya existe para los intentos de código.
+
+## 9b — Agregar recuerdos desde el álbum
+
+- Botón "Agregar un recuerdo de [nombre]" en la ficha de persona.
+- Formulario simplificado del panel: fecha, título, historia, fotos, esa persona ya marcada, con opción de etiquetar a otras de la misma familia.
+- Máximo 10 fotos por recuerdo, 15 MB por foto (el panel no tiene este límite explícito porque lo sube un admin de confianza; aquí sí, porque es de cualquiera con el código).
+- Mismo procesamiento que en el panel (`procesarFotoRecuerdo`): versión original y web, sin metadatos de ubicación.
+- Bajo cada recuerdo: "Agregado por [nombre]" — el nombre sale de `autor_nombre` si lo creó un visitante, o del nombre del miembro (`user_metadata.nombre`, vía `creado_por`) si lo creó alguien del panel. Quien lo creó (mismo `autor_token`, o su propia sesión) ve "Editar"; un miembro con cuenta ve además "Borrar", sin importar quién lo creó; nadie más ve ningún control.
+- Aquí es donde se amplía la política de RLS de `recuerdos` (ver el cambio de permisos más arriba): cualquier miembro edita y borra, no solo el admin.
+- Aviso en el panel (Resumen o Ajustes) cuando el Storage de la familia pase de un umbral — el número exacto se define al construir esta parte, mirando el precio real de Supabase Storage.
+
+## 9c — Agregar personas desde el álbum
+
+- Botón discreto "Agregar a alguien de la familia" en la vista del mes.
+- Formulario: nombres, apellidos, día y mes, año opcional ("Si lo pones, el álbum mostrará la edad que cumple cada año"), parentesco, foto con el mismo recorte cuadrado del panel.
+- Antes de guardar, si ya existe alguien con nombre y fecha parecidos, avisa para evitar duplicados (avisa y confirma, no bloquea).
+- La persona aparece de inmediato en el álbum. En la base queda marcada como no impresa todavía (`impresa_en_edicion int`, el número de la última `ediciones.numero` en la que ya salió impresa, o `null` si nunca ha salido). La vista de impresión y el resumen del panel muestran cuántas personas están sin imprimir desde la última edición registrada; al registrar una edición nueva (`registrarEdicionAction`, Fase 7) se marcan todas las que había sin imprimir como impresas en esa edición.
+- En el álbum (rejilla del mes y ficha), una marca discreta mientras no esté impresa (p. ej. "Nueva — todavía no está en el calendario de la pared").
+- Aquí es donde se amplía la política de RLS de `personas` (ver el cambio de permisos más arriba): cualquier miembro agrega, edita y borra, no solo el admin; y un visitante con el código también puede agregar.
+
+## 9d — Papelera
+
+- Borrar (recuerdos o personas) no elimina de verdad: marca `borrado_en timestamptz`, y desde ahí queda oculto del álbum y de las listas normales del panel — no cambia quién puede verlo por RLS, solo que las consultas fuera de la papelera filtran `borrado_en is null`.
+- El admin ve una papelera en Ajustes: qué se borró, quién y cuándo, con un botón para restaurar (limpia `borrado_en`).
+- Lo borrado hace más de 30 días se elimina de verdad (la fila y sus fotos en Storage) — igual que `intentos_acceso`, se limpia de paso en cada visita a la papelera, sin tarea programada aparte.
+
+## Reparto final de responsabilidades (al terminar la Fase 9)
+
+Nosotros (el panel de `/admin`) creamos familias, las configuramos (Ajustes) y generamos la impresión. La familia, desde el álbum con su código, se mantiene sola: agrega a quien nace o falta, agrega los recuerdos según van pasando, y corrige lo suyo — sin depender de que alguien entre al panel.
+
 ## Vista de impresión (Fase 7)
 
 `/admin/[familia]/imprimir`. La ve cualquier miembro (admin o colaborador), como "Ver álbum"; es de solo lectura salvo el botón de registrar edición (solo admin).
@@ -255,6 +326,7 @@ Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencill
 6. **Panel de administración:** inicio de sesión, personas (con subida y validación de fotos), recuerdos, colaboradores.
 7. **Vista de impresión:** portada y 12 páginas A3; prueba de exportación a PDF.
 8. **Lanzamiento:** QR por mes, dominio, pruebas en celular, prueba de impresión real de enero.
+9. **Acciones de la familia dentro del álbum** (9a–9d, ver esa sección): edad e identidad del visitante, agregar recuerdos, agregar personas, papelera.
 
 ## Forma de trabajar
 
