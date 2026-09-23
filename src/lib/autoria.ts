@@ -1,6 +1,6 @@
 import "server-only";
 import { crearClienteServidor } from "./supabase-server";
-import { obtenerIdentidad } from "./acceso";
+import { obtenerIdentidad, obtenerOCrearIdentidad } from "./acceso";
 
 export interface AutorAlbum {
   creadoPor: string | null;
@@ -38,6 +38,32 @@ export async function identificarVisitante(familiaId: string): Promise<AutorAlbu
   if (identidad) return { creadoPor: null, autorNombre: identidad.nombre, autorToken: identidad.token };
 
   return null;
+}
+
+/**
+ * Quién escribe algo nuevo: si hay sesión de un miembro de esta familia,
+ * es esa persona. Si no, es un visitante con el código — su identidad
+ * sale de la cookie firmada, creándola si es la primera vez que aporta
+ * algo (necesita el nombre que acaba de escribir en el formulario).
+ */
+export async function resolverAutorEscritura(
+  slug: string,
+  familiaId: string,
+  nombreFormulario: string
+): Promise<AutorAlbum | { error: string }> {
+  const miembro = await obtenerMiembroSesion(familiaId);
+  if (miembro) return { creadoPor: miembro.userId, autorNombre: null, autorToken: null };
+
+  const identidadExistente = await obtenerIdentidad();
+  if (identidadExistente) {
+    return { creadoPor: null, autorNombre: identidadExistente.nombre, autorToken: identidadExistente.token };
+  }
+
+  const nombre = nombreFormulario.trim();
+  if (!nombre) return { error: "Escribe tu nombre antes de guardar." };
+
+  const identidad = await obtenerOCrearIdentidad(slug, nombre);
+  return { creadoPor: null, autorNombre: identidad.nombre, autorToken: identidad.token };
 }
 
 /** Un miembro con sesión edita cualquier cosa; un visitante, solo lo que lleva su mismo autor_token. */

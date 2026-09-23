@@ -117,6 +117,7 @@ export default async function FichaPersona({
           ) : (
             <IconoPersona className={styles.iconoPersonaVacia} />
           )}
+          {!persona.impresa && <span className={styles.etiquetaNueva}>Nueva — todavía no está en el calendario de la pared</span>}
         </div>
 
         <h1 className={styles.nombre}>

@@ -2,7 +2,11 @@ import Link from "next/link";
 
 import { requerirMiembro } from "@/lib/admin";
 import { MESES, mesEnUrl } from "@/lib/meses";
-import { calcularStorageUsadoFamilia, UMBRAL_STORAGE_AVISO_BYTES } from "@/lib/supabase-admin";
+import {
+  calcularStorageUsadoFamilia,
+  UMBRAL_STORAGE_AVISO_BYTES,
+  contarPersonasSinImprimir,
+} from "@/lib/supabase-admin";
 
 import styles from "./page.module.css";
 
@@ -20,9 +24,10 @@ export default async function ResumenFamilia({
   const { familia: slug } = await params;
   const { supabase, familia } = await requerirMiembro(slug);
 
-  const [{ data: personas }, storageUsado] = await Promise.all([
+  const [{ data: personas }, storageUsado, sinImprimir] = await Promise.all([
     supabase.from("personas").select("mes").eq("familia_id", familia.id),
     calcularStorageUsadoFamilia(familia.id),
+    contarPersonasSinImprimir(familia.id),
   ]);
 
   const conteos = new Array(12).fill(0);
@@ -38,6 +43,15 @@ export default async function ResumenFamilia({
         <p className={styles.avisoStorage}>
           Las fotos de la familia ya ocupan {formatearMb(storageUsado)}. Si sigue creciendo, va a
           hacer falta subir el plan de almacenamiento de Supabase.
+        </p>
+      )}
+
+      {sinImprimir > 0 && (
+        <p className={styles.avisoSinImprimir}>
+          {sinImprimir === 1
+            ? "Hay 1 persona nueva que todavía no sale en el calendario impreso."
+            : `Hay ${sinImprimir} personas nuevas que todavía no salen en el calendario impreso.`}{" "}
+          <Link href={`/admin/${slug}/imprimir`}>Ir a Imprimir</Link>
         </p>
       )}
 

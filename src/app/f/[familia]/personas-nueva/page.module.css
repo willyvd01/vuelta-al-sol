@@ -1,0 +1,23 @@
+.pagina {
+  position: relative;
+  min-height: 100dvh;
+  background: var(--marfil);
+  overflow: hidden;
+}
+
+.contenido {
+  position: relative;
+  z-index: 1;
+  background: var(--marfil);
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 28px 20px 48px;
+}
+
+.titulo {
+  margin: 0 0 24px;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 26px;
+  color: var(--tinta);
+}

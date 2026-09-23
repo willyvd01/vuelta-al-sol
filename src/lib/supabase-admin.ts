@@ -30,6 +30,7 @@ export interface Persona {
   anio: number | null;
   signo: string;
   fotoWebUrl: string | null;
+  impresa: boolean;
 }
 
 export interface PersonaFicha extends Persona {
@@ -243,7 +244,7 @@ export async function obtenerPersonasDelMes(
 ): Promise<Persona[]> {
   const { data, error } = await admin
     .from("personas")
-    .select("codigo, nombres, apellidos, dia, mes, anio, signo, foto_web")
+    .select("codigo, nombres, apellidos, dia, mes, anio, signo, foto_web, impresa_en_edicion")
     .eq("familia_id", familiaId)
     .eq("mes", mes)
     .order("dia", { ascending: true })
@@ -271,6 +272,7 @@ export async function obtenerPersonasDelMes(
         anio: persona.anio,
         signo: persona.signo ?? "",
         fotoWebUrl,
+        impresa: persona.impresa_en_edicion !== null,
       };
     })
   );
@@ -282,7 +284,7 @@ export async function obtenerPersonaPorCodigo(
   const { data, error } = await admin
     .from("personas")
     .select(
-      "id, codigo, nombres, apellidos, dia, mes, anio, signo, foto_web, familia_id, parentesco, fallecida"
+      "id, codigo, nombres, apellidos, dia, mes, anio, signo, foto_web, familia_id, parentesco, fallecida, impresa_en_edicion"
     )
     .eq("codigo", codigo)
     .maybeSingle();
@@ -311,6 +313,7 @@ export async function obtenerPersonaPorCodigo(
     familiaId: data.familia_id,
     parentesco: data.parentesco,
     fallecida: data.fallecida,
+    impresa: data.impresa_en_edicion !== null,
   };
 }
 
@@ -790,4 +793,125 @@ export async function calcularStorageUsadoFamilia(familiaId: string): Promise<nu
     tamanoDeCarpeta(`${familiaId}/recuerdos`),
   ]);
   return personas + recuerdos;
+}
+
+// ---------------------------------------------------------------------
+// Personas desde el álbum (Fase 9c): misma idea que los recuerdos del
+// álbum — service role key con validación manual, porque un visitante no
+// tiene sesión que RLS pueda usar.
+// ---------------------------------------------------------------------
+
+function normalizarNombre(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function sonParecidos(nombreA: string, nombreB: string): boolean {
+  const a = normalizarNombre(nombreA);
+  const b = normalizarNombre(nombreB);
+  if (!a || !b) return false;
+  return a === b || a.includes(b) || b.includes(a);
+}
+
+export interface PersonaParecida {
+  codigo: string;
+  nombres: string;
+  apellidos: string;
+}
+
+/** Mismo día y mes, y un nombre completo parecido (no exacto): para avisar antes de crear un duplicado. */
+export async function buscarPersonasParecidas(
+  familiaId: string,
+  nombres: string,
+  apellidos: string,
+  dia: number,
+  mes: number
+): Promise<PersonaParecida[]> {
+  const { data, error } = await admin
+    .from("personas")
+    .select("codigo, nombres, apellidos")
+    .eq("familia_id", familiaId)
+    .eq("dia", dia)
+    .eq("mes", mes);
+  if (error) throw new Error(error.message);
+
+  const nombreCompleto = `${nombres} ${apellidos}`;
+  return (data ?? []).filter((p) => sonParecidos(`${p.nombres} ${p.apellidos}`, nombreCompleto));
+}
+
+export async function crearSubidaFotoPersonaAlbum(
+  familiaId: string
+): Promise<{ path: string; token: string }> {
+  const ruta = `${familiaId}/personas/tmp-${crypto.randomUUID()}`;
+  const { data, error } = await admin.storage.from("fotos").createSignedUploadUrl(ruta);
+  if (error) throw new Error(error.message);
+  return { path: data.path, token: data.token };
+}
+
+export async function crearPersonaAlbum(
+  familiaId: string,
+  datos: {
+    nombres: string;
+    apellidos: string;
+    dia: number;
+    mes: number;
+    anio: number | null;
+    parentesco: string | null;
+  },
+  autor: { autorNombre: string | null; autorToken: string | null }
+): Promise<string> {
+  const { data, error } = await admin
+    .from("personas")
+    .insert({
+      familia_id: familiaId,
+      nombres: datos.nombres,
+      apellidos: datos.apellidos,
+      dia: datos.dia,
+      mes: datos.mes,
+      anio: datos.anio,
+      parentesco: datos.parentesco,
+      autor_nombre: autor.autorNombre,
+      autor_token: autor.autorToken,
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return data.id;
+}
+
+export async function guardarFotoPersonaAlbum(
+  personaId: string,
+  original: string,
+  web: string
+): Promise<void> {
+  const { error } = await admin
+    .from("personas")
+    .update({ foto_original: original, foto_web: web })
+    .eq("id", personaId);
+  if (error) throw new Error(error.message);
+}
+
+/** Cuántas personas de la familia todavía no han salido en ningún calendario impreso. */
+export async function contarPersonasSinImprimir(familiaId: string): Promise<number> {
+  const { count, error } = await admin
+    .from("personas")
+    .select("id", { count: "exact", head: true })
+    .eq("familia_id", familiaId)
+    .is("impresa_en_edicion", null);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+/** Al registrar una edición nueva (Fase 7), todo lo que faltaba por imprimir queda marcado con su número. */
+export async function marcarPersonasComoImpresas(familiaId: string, numeroEdicion: number): Promise<void> {
+  const { error } = await admin
+    .from("personas")
+    .update({ impresa_en_edicion: numeroEdicion })
+    .eq("familia_id", familiaId)
+    .is("impresa_en_edicion", null);
+  if (error) throw new Error(error.message);
 }

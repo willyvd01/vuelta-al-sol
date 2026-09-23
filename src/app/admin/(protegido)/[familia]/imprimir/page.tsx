@@ -55,7 +55,7 @@ export default async function VistaDeImpresion({
 
   const { data: filas } = await supabase
     .from("personas")
-    .select("codigo, nombres, apellidos, dia, mes, anio, signo, foto_original")
+    .select("codigo, nombres, apellidos, dia, mes, anio, signo, foto_original, impresa_en_edicion")
     .eq("familia_id", familia.id)
     .order("dia", { ascending: true })
     .order("anio", { ascending: true })
@@ -90,6 +90,8 @@ export default async function VistaDeImpresion({
     personasPorMes[persona.mes - 1].push(persona);
   }
 
+  const sinImprimir = (filas ?? []).filter((f) => f.impresa_en_edicion === null).length;
+
   const { count: edicionesPrevias } = await supabase
     .from("ediciones")
     .select("id", { count: "exact", head: true })
@@ -112,6 +114,15 @@ export default async function VistaDeImpresion({
       </p>
 
       <BotonesImprimir slug={slug} esAdmin={esAdmin} numeroProximaEdicion={numeroProximaEdicion} />
+
+      {sinImprimir > 0 && (
+        <p className={styles.avisoSinImprimir}>
+          {sinImprimir === 1
+            ? "1 persona todavía no ha salido en ningún calendario impreso."
+            : `${sinImprimir} personas todavía no han salido en ningún calendario impreso.`}{" "}
+          Al registrar esta edición, quedan marcadas como impresas.
+        </p>
+      )}
 
       {advertenciaQr && (
         <p className={styles.advertencia}>

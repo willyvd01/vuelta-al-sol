@@ -36,6 +36,18 @@
   padding: 1px 4px;
 }
 
+.avisoSinImprimir {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  max-width: 46em;
+  border-left: 3px solid var(--bronce);
+  background: var(--foto-vacia);
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--tinta);
+}
+
 /* Escala fija solo para revisar el contenido en pantalla: la hoja real
    mide 297 × 420 mm (ver @page arriba) y solo se ve a tamaño real al
    imprimir o exportar a PDF (@media print, más abajo). */
@@ -74,7 +86,8 @@
 
   .titulo,
   .ayuda,
-  .advertencia {
+  .advertencia,
+  .avisoSinImprimir {
     display: none;
   }
 

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requerirMiembro } from "@/lib/admin";
+import { marcarPersonasComoImpresas } from "@/lib/supabase-admin";
 
 export interface EstadoEdicion {
   error: string | null;
@@ -28,6 +29,8 @@ export async function registrarEdicionAction(
     .from("ediciones")
     .insert({ familia_id: familia.id, numero, notas: notas.trim() || null });
   if (error) return { error: error.message };
+
+  await marcarPersonasComoImpresas(familia.id, numero);
 
   revalidatePath(`/admin/${slug}/imprimir`);
   return { error: null, numero };

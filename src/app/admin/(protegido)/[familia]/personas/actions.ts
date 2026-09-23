@@ -17,8 +17,7 @@ export interface SubidaFirmada {
 export async function crearSubidaFotoAction(
   slug: string
 ): Promise<SubidaFirmada | { error: string }> {
-  const { supabase, familia, esAdmin } = await requerirMiembro(slug);
-  if (!esAdmin) return { error: "Solo un administrador puede subir fotos." };
+  const { supabase, familia } = await requerirMiembro(slug);
 
   const ruta = `${familia.id}/personas/tmp-${crypto.randomUUID()}`;
   const { data, error } = await supabase.storage.from("fotos").createSignedUploadUrl(ruta);
@@ -32,8 +31,7 @@ export async function guardarPersonaAction(
   codigoExistente: string | null,
   formData: FormData
 ): Promise<EstadoPersona> {
-  const { supabase, familia, esAdmin } = await requerirMiembro(slug);
-  if (!esAdmin) return { error: "Solo un administrador puede hacer esto." };
+  const { supabase, familia } = await requerirMiembro(slug);
 
   const nombres = String(formData.get("nombres") ?? "").trim();
   const apellidos = String(formData.get("apellidos") ?? "").trim();

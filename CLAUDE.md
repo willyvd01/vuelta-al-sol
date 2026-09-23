@@ -247,12 +247,13 @@ Columnas nuevas, opcionales, en `personas` y `recuerdos`: `autor_nombre text`, `
 
 ## 9c — Agregar personas desde el álbum
 
-- Botón discreto "Agregar a alguien de la familia" en la vista del mes.
-- Formulario: nombres, apellidos, día y mes, año opcional ("Si lo pones, el álbum mostrará la edad que cumple cada año"), parentesco, foto con el mismo recorte cuadrado del panel.
-- Antes de guardar, si ya existe alguien con nombre y fecha parecidos, avisa para evitar duplicados (avisa y confirma, no bloquea).
-- La persona aparece de inmediato en el álbum. En la base queda marcada como no impresa todavía (`impresa_en_edicion int`, el número de la última `ediciones.numero` en la que ya salió impresa, o `null` si nunca ha salido). La vista de impresión y el resumen del panel muestran cuántas personas están sin imprimir desde la última edición registrada; al registrar una edición nueva (`registrarEdicionAction`, Fase 7) se marcan todas las que había sin imprimir como impresas en esa edición.
-- En el álbum (rejilla del mes y ficha), una marca discreta mientras no esté impresa (p. ej. "Nueva — todavía no está en el calendario de la pared").
-- Aquí es donde se amplía la política de RLS de `personas` (ver el cambio de permisos más arriba): cualquier miembro agrega, edita y borra, no solo el admin; y un visitante con el código también puede agregar.
+- Botón discreto "+ Agregar a alguien de la familia" en la vista del mes (`/f/[familia]/personas-nueva?mes=…&volver=…`).
+- Formulario: nombres, apellidos, día y mes, año opcional ("Si lo pones, el álbum mostrará la edad que cumple cada año"), parentesco, foto con el mismo recorte cuadrado del panel (se reutiliza `RecortadorFoto` del panel tal cual).
+- Antes de guardar, si ya existe alguien con nombre y fecha parecidos, avisa para evitar duplicados (avisa y confirma, no bloquea). "Parecido" es exacto o uno contiene al otro (sin tildes, sin mayúsculas) — no es una coincidencia difusa de verdad: "Martha" con h no avisa contra "Marta" sin h, aunque sea el mismo día. Suficiente para el caso típico (alguien que escribe solo el nombre de pila, o con un apellido de más), no para cualquier error de tipeo.
+- Solo hay formulario para **agregar**, no para editar desde el álbum — a diferencia de los recuerdos (Fase 9b), acá no se pidió un flujo de edición, así que no se construyó uno. Si más adelante hace falta, `autor_nombre`/`autor_token` ya quedan guardados en cada persona creada por un visitante, listos para reusar la misma lógica de `puedeEditar()`.
+- La persona aparece de inmediato en el álbum. En la base queda marcada como no impresa todavía (`impresa_en_edicion int`, el número de la última `ediciones.numero` en la que ya salió impresa, o `null` si nunca ha salido — migración 007). La vista de impresión y el resumen del panel muestran cuántas personas están sin imprimir desde la última edición registrada; al registrar una edición nueva (`registrarEdicionAction`, Fase 7) se marcan todas las que había sin imprimir como impresas en esa edición.
+- En el álbum (rejilla del mes y ficha), una marca discreta "Nueva" mientras no esté impresa.
+- Aquí es donde se amplía la política de RLS de `personas` (migración 007): cualquier miembro **agrega y edita**, no solo el admin; y un visitante con el código también agrega. Borrar se queda solo para el admin hasta la Fase 9d, igual que con los recuerdos.
 
 ## 9d — Papelera
 

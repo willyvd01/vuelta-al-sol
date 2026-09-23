@@ -143,6 +143,7 @@ create table public.personas (
   signo         text generated always as (public.signo_zodiacal(mes, dia)) stored,
   autor_nombre  text,                         -- solo si la agregó un visitante sin sesión (Fase 9)
   autor_token   text,                         -- ídem: le permite editar/borrar lo suyo
+  impresa_en_edicion int,                     -- null hasta que sale en un calendario impreso (ediciones.numero)
   creada_en     timestamptz not null default now(),
   constraint personas_fecha_valida check (public.fecha_valida(mes, dia)),
   constraint personas_anio_razonable check (anio is null or anio between 1850 and 2100)
@@ -193,6 +194,12 @@ create table public.ediciones (
   generada_en timestamptz not null default now(),
   unique (familia_id, numero)
 );
+
+-- personas.impresa_en_edicion solo puede apuntar a una edición de su
+-- misma familia; si esa edición se borra, vuelve a null en vez de
+-- romper la fila (no hay forma de saber si de verdad se imprimió).
+alter table public.personas add constraint personas_impresa_en_edicion_fkey
+  foreign key (familia_id, impresa_en_edicion) references public.ediciones (familia_id, numero) on delete set null;
 
 -- Límite de intentos al código de acceso, y también (tipo = 'aporte',
 -- Fase 9) límite de cuántos recuerdos y personas se agregan por familia
@@ -339,9 +346,9 @@ create policy miembros_editar   on public.miembros for update to authenticated
 create policy miembros_quitar   on public.miembros for delete to authenticated using (public.es_admin(familia_id));
 
 create policy personas_ver     on public.personas for select to authenticated using (public.es_miembro(familia_id));
-create policy personas_agregar on public.personas for insert to authenticated with check (public.es_admin(familia_id));
+create policy personas_agregar on public.personas for insert to authenticated with check (public.es_miembro(familia_id));
 create policy personas_editar  on public.personas for update to authenticated
-  using (public.es_admin(familia_id)) with check (public.es_admin(familia_id));
+  using (public.es_miembro(familia_id)) with check (public.es_miembro(familia_id));
 create policy personas_borrar  on public.personas for delete to authenticated using (public.es_admin(familia_id));
 
 create policy recuerdos_ver     on public.recuerdos for select to authenticated using (public.es_miembro(familia_id));

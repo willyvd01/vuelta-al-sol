@@ -136,6 +136,7 @@ export default async function VistaDelMes({
                       ) : (
                         <IconoPersona className={styles.iconoPersonaVacia} />
                       )}
+                      {!persona.impresa && <span className={styles.etiquetaNueva}>Nueva</span>}
                     </div>
                     <p className={styles.nombrePersona}>
                       {persona.nombres} {persona.apellidos}
@@ -168,6 +169,13 @@ export default async function VistaDelMes({
             })}
           </ul>
         )}
+
+        <Link
+          href={`/f/${familiaSlug}/personas-nueva?mes=${mesEnUrl(numeroMes)}&volver=${encodeURIComponent(`/f/${familiaSlug}/${mesParam}`)}`}
+          className={styles.botonAgregarPersona}
+        >
+          + Agregar a alguien de la familia
+        </Link>
 
         <nav className={styles.tiraMeses} aria-label="Ir a otro mes">
           {MESES.map((mes) => (

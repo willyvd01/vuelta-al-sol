@@ -1,8 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { verificarAcceso, obtenerIdentidad, obtenerOCrearIdentidad, obtenerIp, hashIp } from "@/lib/acceso";
-import { obtenerMiembroSesion, puedeEditar, type AutorAlbum } from "@/lib/autoria";
+import { verificarAcceso, obtenerIp, hashIp } from "@/lib/acceso";
+import { resolverAutorEscritura, puedeEditar } from "@/lib/autoria";
 import {
   crearSubidaFotoRecuerdoAlbum,
   validarPersonasDeFamilia,
@@ -41,32 +41,6 @@ export async function crearSubidaFotoRecuerdoAlbumAction(
 
 type FotoEntrada = { tipo: "existente"; id: string } | { tipo: "nueva"; rutaTemporal: string };
 
-/**
- * Quién escribe: si hay sesión de un miembro de esta familia, es esa
- * persona (edita y borra lo de cualquiera). Si no, es un visitante con el
- * código — su identidad sale de la cookie firmada, creándola si es la
- * primera vez que aporta algo (necesita el nombre que acaba de escribir).
- */
-async function resolverAutor(
-  slug: string,
-  familiaId: string,
-  nombreFormulario: string
-): Promise<AutorAlbum | { error: string }> {
-  const miembro = await obtenerMiembroSesion(familiaId);
-  if (miembro) return { creadoPor: miembro.userId, autorNombre: null, autorToken: null };
-
-  const identidadExistente = await obtenerIdentidad();
-  if (identidadExistente) {
-    return { creadoPor: null, autorNombre: identidadExistente.nombre, autorToken: identidadExistente.token };
-  }
-
-  const nombre = nombreFormulario.trim();
-  if (!nombre) return { error: "Escribe tu nombre antes de guardar." };
-
-  const identidad = await obtenerOCrearIdentidad(slug, nombre);
-  return { creadoPor: null, autorNombre: identidad.nombre, autorToken: identidad.token };
-}
-
 export async function guardarRecuerdoAlbumAction(
   slug: string,
   recuerdoIdExistente: string | null,
@@ -89,7 +63,7 @@ export async function guardarRecuerdoAlbumAction(
   if (personaIds.length === 0) return { error: "Etiqueta al menos a una persona." };
   if (fotosFinal.length > MAX_FOTOS) return { error: `Máximo ${MAX_FOTOS} fotos por recuerdo.` };
 
-  const autor = await resolverAutor(slug, familiaId, nombreVisitante);
+  const autor = await resolverAutorEscritura(slug, familiaId, nombreVisitante);
   if ("error" in autor) return autor;
 
   const personasValidas = await validarPersonasDeFamilia(familiaId, personaIds);

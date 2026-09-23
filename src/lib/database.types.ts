@@ -154,6 +154,7 @@ export type Database = {
           foto_original: string | null
           foto_web: string | null
           id: string
+          impresa_en_edicion: number | null
           mes: number
           nombres: string
           parentesco: string | null
@@ -172,6 +173,7 @@ export type Database = {
           foto_original?: string | null
           foto_web?: string | null
           id?: string
+          impresa_en_edicion?: number | null
           mes: number
           nombres: string
           parentesco?: string | null
@@ -190,6 +192,7 @@ export type Database = {
           foto_original?: string | null
           foto_web?: string | null
           id?: string
+          impresa_en_edicion?: number | null
           mes?: number
           nombres?: string
           parentesco?: string | null

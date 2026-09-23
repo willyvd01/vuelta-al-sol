@@ -6,7 +6,8 @@
   color: var(--tinta);
 }
 
-.avisoStorage {
+.avisoStorage,
+.avisoSinImprimir {
   margin: -8px 0 20px;
   padding: 12px 16px;
   border-left: 3px solid var(--bronce);
@@ -15,6 +16,10 @@
   font-size: 13px;
   line-height: 1.5;
   color: var(--tinta);
+}
+
+.avisoSinImprimir a {
+  color: var(--bronce);
 }
 
 .rejilla {
