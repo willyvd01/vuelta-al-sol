@@ -144,11 +144,14 @@ create table public.personas (
   autor_nombre  text,                         -- solo si la agregó un visitante sin sesión (Fase 9)
   autor_token   text,                         -- ídem: le permite editar/borrar lo suyo
   impresa_en_edicion int,                     -- null hasta que sale en un calendario impreso (ediciones.numero)
+  borrado_en    timestamptz,                  -- papelera (Fase 9d): null = visible
+  borrado_por   uuid references auth.users(id) on delete set null,
   creada_en     timestamptz not null default now(),
   constraint personas_fecha_valida check (public.fecha_valida(mes, dia)),
   constraint personas_anio_razonable check (anio is null or anio between 1850 and 2100)
 );
 create index personas_familia_mes on public.personas (familia_id, mes, dia);
+create index personas_borrado_en on public.personas (familia_id, borrado_en);
 
 create table public.recuerdos (
   id         uuid primary key default gen_random_uuid(),
@@ -160,9 +163,12 @@ create table public.recuerdos (
   creado_por   uuid default auth.uid() references auth.users(id) on delete set null,
   autor_nombre text,                          -- solo si lo agregó un visitante sin sesión (Fase 9)
   autor_token  text,                          -- ídem: le permite editar/borrar lo suyo
+  borrado_en   timestamptz,                   -- papelera (Fase 9d): null = visible
+  borrado_por  uuid references auth.users(id) on delete set null,
   creado_en  timestamptz not null default now()
 );
 create index recuerdos_familia_fecha on public.recuerdos (familia_id, fecha desc);
+create index recuerdos_borrado_en on public.recuerdos (familia_id, borrado_en);
 
 -- Un recuerdo puede incluir a varias personas (un viaje, una boda).
 create table public.recuerdo_personas (

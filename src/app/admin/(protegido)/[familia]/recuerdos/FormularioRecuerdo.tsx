@@ -23,12 +23,10 @@ export interface RecuerdoExistente {
 export function FormularioRecuerdo({
   slug,
   personasDisponibles,
-  esAdmin,
   recuerdo,
 }: {
   slug: string;
   personasDisponibles: PersonaOpcion[];
-  esAdmin: boolean;
   recuerdo?: RecuerdoExistente;
 }) {
   const router = useRouter();
@@ -44,7 +42,7 @@ export function FormularioRecuerdo({
   const [error, setError] = useState<string | null>(null);
   const [enCurso, setEnCurso] = useState(false);
 
-  const bloqueadas = esAdmin ? new Set<string>() : new Set(recuerdo?.personas ?? []);
+  const bloqueadas = new Set<string>();
 
   function cambiarFotos(nuevas: FotoItem[]) {
     const idsExistentesNuevos = new Set(
@@ -172,7 +170,7 @@ export function FormularioRecuerdo({
         <GaleriaFotos
           fotos={fotos}
           onCambio={cambiarFotos}
-          puedeQuitarExistentes={esAdmin}
+          puedeQuitarExistentes={true}
           onError={setErrorFoto}
         />
         {errorFoto && <p className={styles.error}>{errorFoto}</p>}

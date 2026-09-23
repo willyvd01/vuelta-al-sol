@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requerirMiembro } from "@/lib/admin";
 import { FormularioRecuerdo } from "../../FormularioRecuerdo";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -14,22 +14,25 @@ export default async function EditarRecuerdo({
   params: Promise<{ familia: string; id: string }>;
 }) {
   const { familia: slug, id } = await params;
-  const { supabase, familia, user, esAdmin } = await requerirMiembro(slug);
+  const { supabase, familia } = await requerirMiembro(slug);
 
   const { data: recuerdo } = await supabase
     .from("recuerdos")
-    .select("id, fecha, titulo, historia, lugar, creado_por")
+    .select("id, fecha, titulo, historia, lugar")
     .eq("id", id)
     .eq("familia_id", familia.id)
+    .is("borrado_en", null)
     .maybeSingle();
 
   if (!recuerdo) notFound();
 
-  const puedeEditar = esAdmin || recuerdo.creado_por === user.id;
-  if (!puedeEditar) redirect(`/admin/${slug}/recuerdos`);
-
   const [{ data: personas }, { data: personasRecuerdo }, { data: fotos }] = await Promise.all([
-    supabase.from("personas").select("id, nombres, apellidos").eq("familia_id", familia.id).order("nombres"),
+    supabase
+      .from("personas")
+      .select("id, nombres, apellidos")
+      .eq("familia_id", familia.id)
+      .is("borrado_en", null)
+      .order("nombres"),
     supabase.from("recuerdo_personas").select("persona_id").eq("recuerdo_id", id),
     supabase
       .from("recuerdo_fotos")
@@ -54,7 +57,6 @@ export default async function EditarRecuerdo({
         <FormularioRecuerdo
           slug={slug}
           personasDisponibles={personas ?? []}
-          esAdmin={esAdmin}
           recuerdo={{
             id: recuerdo.id,
             fecha: recuerdo.fecha,

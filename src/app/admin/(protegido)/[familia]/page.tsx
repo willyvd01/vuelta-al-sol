@@ -25,7 +25,7 @@ export default async function ResumenFamilia({
   const { supabase, familia } = await requerirMiembro(slug);
 
   const [{ data: personas }, storageUsado, sinImprimir] = await Promise.all([
-    supabase.from("personas").select("mes").eq("familia_id", familia.id),
+    supabase.from("personas").select("mes").eq("familia_id", familia.id).is("borrado_en", null),
     calcularStorageUsadoFamilia(familia.id),
     contarPersonasSinImprimir(familia.id),
   ]);

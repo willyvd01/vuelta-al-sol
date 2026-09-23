@@ -150,24 +150,18 @@ export async function guardarRecuerdoAction(
   return { error: null };
 }
 
+/** No borra de verdad: manda a la papelera (Fase 9d). Cualquier miembro puede. */
 export async function borrarRecuerdoAction(
   slug: string,
   recuerdoId: string
 ): Promise<EstadoRecuerdo> {
-  const { supabase, esAdmin } = await requerirMiembro(slug);
-  if (!esAdmin) return { error: "Solo un administrador puede borrar recuerdos." };
+  const { supabase, user } = await requerirMiembro(slug);
 
-  const { data: fotos } = await supabase
-    .from("recuerdo_fotos")
-    .select("ruta_original, ruta_web")
-    .eq("recuerdo_id", recuerdoId);
-
-  const { error } = await supabase.from("recuerdos").delete().eq("id", recuerdoId);
+  const { error } = await supabase
+    .from("recuerdos")
+    .update({ borrado_en: new Date().toISOString(), borrado_por: user.id })
+    .eq("id", recuerdoId);
   if (error) return { error: error.message };
-
-  if (fotos && fotos.length > 0) {
-    await borrarFotosDeRecuerdo(fotos.flatMap((f) => [f.ruta_original, f.ruta_web]));
-  }
 
   revalidatePath(`/admin/${slug}/recuerdos`);
   return { error: null };

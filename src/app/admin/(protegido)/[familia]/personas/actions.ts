@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requerirMiembro } from "@/lib/admin";
-import { procesarFotoPersona, borrarFotosDePersona } from "@/lib/supabase-admin";
+import { procesarFotoPersona } from "@/lib/supabase-admin";
 
 export interface EstadoPersona {
   error: string | null;
@@ -98,12 +98,12 @@ export async function guardarPersonaAction(
   return { error: null };
 }
 
+/** No borra de verdad: manda a la papelera (Fase 9d). Cualquier miembro puede. */
 export async function borrarPersonaAction(
   slug: string,
   codigo: string
 ): Promise<EstadoPersona> {
-  const { supabase, familia, esAdmin } = await requerirMiembro(slug);
-  if (!esAdmin) return { error: "Solo un administrador puede borrar personas." };
+  const { supabase, user } = await requerirMiembro(slug);
 
   const { data: persona } = await supabase
     .from("personas")
@@ -112,10 +112,11 @@ export async function borrarPersonaAction(
     .maybeSingle();
   if (!persona) return { error: "Esa persona ya no existe." };
 
-  const { error } = await supabase.from("personas").delete().eq("id", persona.id);
+  const { error } = await supabase
+    .from("personas")
+    .update({ borrado_en: new Date().toISOString(), borrado_por: user.id })
+    .eq("id", persona.id);
   if (error) return { error: error.message };
-
-  await borrarFotosDePersona(familia.id, persona.id);
 
   revalidatePath(`/admin/${slug}/personas`);
   return { error: null };

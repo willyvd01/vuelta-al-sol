@@ -16,12 +16,13 @@ export default async function ListaRecuerdos({
   params: Promise<{ familia: string }>;
 }) {
   const { familia: slug } = await params;
-  const { supabase, familia, user, esAdmin } = await requerirMiembro(slug);
+  const { supabase, familia } = await requerirMiembro(slug);
 
   const { data: recuerdos } = await supabase
     .from("recuerdos")
-    .select("id, fecha, titulo, lugar, creado_por")
+    .select("id, fecha, titulo, lugar")
     .eq("familia_id", familia.id)
+    .is("borrado_en", null)
     .order("fecha", { ascending: false });
 
   const ids = (recuerdos ?? []).map((r) => r.id);
@@ -52,7 +53,6 @@ export default async function ListaRecuerdos({
       fechaLarga: formatearFechaLarga(r.fecha),
       lugar: r.lugar,
       fotoPortadaUrl: portadas.get(r.id) ?? null,
-      puedeEditar: esAdmin || r.creado_por === user.id,
     });
     porAnio.set(anio, lista);
   }
@@ -75,7 +75,7 @@ export default async function ListaRecuerdos({
             <h2 className={styles.tituloAnio}>{anio}</h2>
             <ul className={styles.listaRecuerdos}>
               {porAnio.get(anio)!.map((r) => (
-                <TarjetaRecuerdo key={r.id} slug={slug} recuerdo={r} esAdmin={esAdmin} />
+                <TarjetaRecuerdo key={r.id} slug={slug} recuerdo={r} />
               ))}
             </ul>
           </section>

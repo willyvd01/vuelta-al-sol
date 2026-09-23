@@ -16,12 +16,13 @@ export default async function ListaPersonas({
   params: Promise<{ familia: string }>;
 }) {
   const { familia: slug } = await params;
-  const { supabase, familia, esAdmin } = await requerirMiembro(slug);
+  const { supabase, familia } = await requerirMiembro(slug);
 
   const { data: personas } = await supabase
     .from("personas")
     .select("codigo, nombres, apellidos, dia, mes, foto_web")
     .eq("familia_id", familia.id)
+    .is("borrado_en", null)
     .order("dia", { ascending: true });
 
   const porMes = new Map<number, PersonaLista[]>();
@@ -51,11 +52,9 @@ export default async function ListaPersonas({
     <div>
       <div className={styles.cabeceraLista}>
         <h1 className={styles.titulo}>Personas</h1>
-        {esAdmin && (
-          <Link href={`/admin/${slug}/personas/nueva`} className={styles.boton}>
-            Agregar persona
-          </Link>
-        )}
+        <Link href={`/admin/${slug}/personas/nueva`} className={styles.boton}>
+          Agregar persona
+        </Link>
       </div>
 
       {!personas || personas.length === 0 ? (
@@ -69,7 +68,7 @@ export default async function ListaPersonas({
               <h2 className={styles.tituloMes}>{mes.nombre}</h2>
               <ul className={styles.listaPersonas}>
                 {lista.map((p) => (
-                  <TarjetaPersona key={p.codigo} slug={slug} persona={p} esAdmin={esAdmin} />
+                  <TarjetaPersona key={p.codigo} slug={slug} persona={p} />
                 ))}
               </ul>
             </section>

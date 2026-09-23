@@ -146,6 +146,8 @@ export type Database = {
           apellidos: string
           autor_nombre: string | null
           autor_token: string | null
+          borrado_en: string | null
+          borrado_por: string | null
           codigo: string
           creada_en: string
           dia: number
@@ -165,6 +167,8 @@ export type Database = {
           apellidos?: string
           autor_nombre?: string | null
           autor_token?: string | null
+          borrado_en?: string | null
+          borrado_por?: string | null
           codigo?: string
           creada_en?: string
           dia: number
@@ -184,6 +188,8 @@ export type Database = {
           apellidos?: string
           autor_nombre?: string | null
           autor_token?: string | null
+          borrado_en?: string | null
+          borrado_por?: string | null
           codigo?: string
           creada_en?: string
           dia?: number
@@ -293,6 +299,8 @@ export type Database = {
         Row: {
           autor_nombre: string | null
           autor_token: string | null
+          borrado_en: string | null
+          borrado_por: string | null
           creado_en: string
           creado_por: string | null
           familia_id: string
@@ -305,6 +313,8 @@ export type Database = {
         Insert: {
           autor_nombre?: string | null
           autor_token?: string | null
+          borrado_en?: string | null
+          borrado_por?: string | null
           creado_en?: string
           creado_por?: string | null
           familia_id: string
@@ -317,6 +327,8 @@ export type Database = {
         Update: {
           autor_nombre?: string | null
           autor_token?: string | null
+          borrado_en?: string | null
+          borrado_por?: string | null
           creado_en?: string
           creado_por?: string | null
           familia_id?: string

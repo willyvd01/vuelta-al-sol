@@ -57,6 +57,7 @@ export default async function VistaDeImpresion({
     .from("personas")
     .select("codigo, nombres, apellidos, dia, mes, anio, signo, foto_original, impresa_en_edicion")
     .eq("familia_id", familia.id)
+    .is("borrado_en", null)
     .order("dia", { ascending: true })
     .order("anio", { ascending: true })
     .order("apellidos", { ascending: true });

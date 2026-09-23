@@ -14,17 +14,14 @@ export interface RecuerdoLista {
   fechaLarga: string;
   lugar: string | null;
   fotoPortadaUrl: string | null;
-  puedeEditar: boolean;
 }
 
 export function TarjetaRecuerdo({
   slug,
   recuerdo,
-  esAdmin,
 }: {
   slug: string;
   recuerdo: RecuerdoLista;
-  esAdmin: boolean;
 }) {
   const router = useRouter();
   const [confirmando, setConfirmando] = useState(false);
@@ -59,14 +56,10 @@ export function TarjetaRecuerdo({
 
       {!confirmando && (
         <div className={styles.accionesPersona}>
-          {recuerdo.puedeEditar && (
-            <Link href={`/admin/${slug}/recuerdos/${recuerdo.id}/editar`}>Editar</Link>
-          )}
-          {esAdmin && (
-            <button type="button" onClick={() => setConfirmando(true)}>
-              Borrar
-            </button>
-          )}
+          <Link href={`/admin/${slug}/recuerdos/${recuerdo.id}/editar`}>Editar</Link>
+          <button type="button" onClick={() => setConfirmando(true)}>
+            Borrar
+          </button>
         </div>
       )}
 

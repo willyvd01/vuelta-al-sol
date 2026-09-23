@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { requerirMiembro } from "@/lib/admin";
 import { FormularioPersona } from "../../FormularioPersona";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -12,14 +12,14 @@ export default async function EditarPersona({
   params: Promise<{ familia: string; codigo: string }>;
 }) {
   const { familia: slug, codigo } = await params;
-  const { supabase, familia, esAdmin } = await requerirMiembro(slug);
-  if (!esAdmin) redirect(`/admin/${slug}/personas`);
+  const { supabase, familia } = await requerirMiembro(slug);
 
   const { data: persona } = await supabase
     .from("personas")
     .select("codigo, nombres, apellidos, dia, mes, anio, parentesco, fallecida, foto_web")
     .eq("codigo", codigo)
     .eq("familia_id", familia.id)
+    .is("borrado_en", null)
     .maybeSingle();
 
   if (!persona) notFound();

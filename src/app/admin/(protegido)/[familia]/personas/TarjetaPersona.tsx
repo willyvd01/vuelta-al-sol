@@ -19,11 +19,9 @@ export interface PersonaLista {
 export function TarjetaPersona({
   slug,
   persona,
-  esAdmin,
 }: {
   slug: string;
   persona: PersonaLista;
-  esAdmin: boolean;
 }) {
   const router = useRouter();
   const [confirmando, setConfirmando] = useState(false);
@@ -52,7 +50,7 @@ export function TarjetaPersona({
         {persona.dia} · {persona.nombres} {persona.apellidos}
       </span>
 
-      {esAdmin && !confirmando && (
+      {!confirmando && (
         <div className={styles.accionesPersona}>
           <Link href={`/admin/${slug}/personas/${persona.codigo}/editar`}>Editar</Link>
           <button type="button" onClick={() => setConfirmando(true)}>
@@ -61,7 +59,7 @@ export function TarjetaPersona({
         </div>
       )}
 
-      {esAdmin && confirmando && (
+      {confirmando && (
         <div className={styles.accionesPersona}>
           {error ? (
             <span className={styles.errorChico}>{error}</span>

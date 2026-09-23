@@ -1,7 +1,8 @@
 import { requerirMiembro } from "@/lib/admin";
-import { obtenerDatosDeUsuarios } from "@/lib/supabase-admin";
+import { obtenerDatosDeUsuarios, purgarPapeleraVieja } from "@/lib/supabase-admin";
 import { FormularioDatos, FormularioCodigo, FormularioMiContrasena } from "./FormularioAjustes";
 import { FormularioColaboradores, type MiembroLista } from "./FormularioColaboradores";
+import { Papelera, type ItemPapelera } from "./Papelera";
 
 import styles from "./page.module.css";
 
@@ -40,9 +41,29 @@ export default async function Ajustes({
     .select("user_id, rol")
     .eq("familia_id", familia.id);
 
-  const datosUsuarios = await obtenerDatosDeUsuarios(
-    (miembrosCrudos ?? []).map((m) => m.user_id)
-  );
+  await purgarPapeleraVieja(familia.id);
+
+  const [{ data: personasBorradas }, { data: recuerdosBorrados }] = await Promise.all([
+    supabase
+      .from("personas")
+      .select("id, nombres, apellidos, borrado_en, borrado_por")
+      .eq("familia_id", familia.id)
+      .not("borrado_en", "is", null),
+    supabase
+      .from("recuerdos")
+      .select("id, titulo, borrado_en, borrado_por")
+      .eq("familia_id", familia.id)
+      .not("borrado_en", "is", null),
+  ]);
+
+  const idsParaNombres = [
+    ...new Set(
+      [...(miembrosCrudos ?? []).map((m) => m.user_id), ...(personasBorradas ?? []).map((p) => p.borrado_por), ...(recuerdosBorrados ?? []).map((r) => r.borrado_por)].filter(
+        (id): id is string => !!id
+      )
+    ),
+  ];
+  const datosUsuarios = await obtenerDatosDeUsuarios(idsParaNombres);
 
   const miembros: MiembroLista[] = (miembrosCrudos ?? []).map((m) => ({
     userId: m.user_id,
@@ -51,6 +72,26 @@ export default async function Ajustes({
     nombre: datosUsuarios.get(m.user_id)?.nombre ?? null,
     esUsuarioActual: m.user_id === user.id,
   }));
+
+  const nombreDeQuienBorro = (userId: string | null) =>
+    userId ? datosUsuarios.get(userId)?.nombre ?? datosUsuarios.get(userId)?.correo ?? "alguien" : "alguien";
+
+  const papelera: ItemPapelera[] = [
+    ...(personasBorradas ?? []).map((p) => ({
+      tipo: "persona" as const,
+      id: p.id,
+      titulo: `${p.nombres} ${p.apellidos}`.trim(),
+      borradoEn: p.borrado_en as string,
+      borradoPor: nombreDeQuienBorro(p.borrado_por),
+    })),
+    ...(recuerdosBorrados ?? []).map((r) => ({
+      tipo: "recuerdo" as const,
+      id: r.id,
+      titulo: r.titulo,
+      borradoEn: r.borrado_en as string,
+      borradoPor: nombreDeQuienBorro(r.borrado_por),
+    })),
+  ].sort((a, b) => new Date(b.borradoEn).getTime() - new Date(a.borradoEn).getTime());
 
   return (
     <div>
@@ -69,6 +110,11 @@ export default async function Ajustes({
       <section className={styles.seccion}>
         <h2 className={styles.tituloSeccion}>Colaboradores</h2>
         <FormularioColaboradores slug={slug} miembros={miembros} />
+      </section>
+
+      <section className={styles.seccion}>
+        <h2 className={styles.tituloSeccion}>Papelera</h2>
+        <Papelera slug={slug} items={papelera} />
       </section>
 
       <section className={styles.seccion}>

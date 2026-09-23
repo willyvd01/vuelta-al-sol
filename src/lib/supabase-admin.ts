@@ -234,6 +234,7 @@ export async function obtenerTodasLasPersonas(familiaId: string): Promise<Person
     .from("personas")
     .select("id, codigo, nombres, apellidos")
     .eq("familia_id", familiaId)
+    .is("borrado_en", null)
     .order("nombres", { ascending: true });
   if (error) throw new Error(error.message);
   return data ?? [];
@@ -248,6 +249,7 @@ export async function obtenerPersonasDelMes(
     .select("codigo, nombres, apellidos, dia, mes, anio, signo, foto_web, impresa_en_edicion")
     .eq("familia_id", familiaId)
     .eq("mes", mes)
+    .is("borrado_en", null)
     .order("dia", { ascending: true })
     .order("anio", { ascending: true })
     .order("apellidos", { ascending: true });
@@ -288,6 +290,7 @@ export async function obtenerPersonaPorCodigo(
       "id, codigo, nombres, apellidos, dia, mes, anio, signo, foto_web, familia_id, parentesco, fallecida, impresa_en_edicion, autor_token"
     )
     .eq("codigo", codigo)
+    .is("borrado_en", null)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
@@ -353,6 +356,7 @@ export async function obtenerRecuerdosDePersona(
     )
     .eq("familia_id", familiaId)
     .eq("filtro.persona_id", personaId)
+    .is("borrado_en", null)
     .order("fecha", { ascending: false })
     .order("orden", { referencedTable: "recuerdo_fotos", ascending: true });
 
@@ -557,6 +561,7 @@ export async function validarPersonasDeFamilia(
     .from("personas")
     .select("id, codigo")
     .eq("familia_id", familiaId)
+    .is("borrado_en", null)
     .in("id", personaIds);
   if (error) throw new Error(error.message);
   return new Map((data ?? []).map((p) => [p.id, p.codigo]));
@@ -615,6 +620,7 @@ export async function obtenerRecuerdoParaEditarAlbum(
        recuerdo_fotos ( id, ruta_web, orden )`
     )
     .eq("id", recuerdoId)
+    .is("borrado_en", null)
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return null;
@@ -838,7 +844,8 @@ export async function buscarPersonasParecidas(
     .select("codigo, nombres, apellidos")
     .eq("familia_id", familiaId)
     .eq("dia", dia)
-    .eq("mes", mes);
+    .eq("mes", mes)
+    .is("borrado_en", null);
   if (error) throw new Error(error.message);
 
   const nombreCompleto = `${nombres} ${apellidos}`;
@@ -936,7 +943,8 @@ export async function contarPersonasSinImprimir(familiaId: string): Promise<numb
     .from("personas")
     .select("id", { count: "exact", head: true })
     .eq("familia_id", familiaId)
-    .is("impresa_en_edicion", null);
+    .is("impresa_en_edicion", null)
+    .is("borrado_en", null);
   if (error) throw new Error(error.message);
   return count ?? 0;
 }
@@ -947,6 +955,60 @@ export async function marcarPersonasComoImpresas(familiaId: string, numeroEdicio
     .from("personas")
     .update({ impresa_en_edicion: numeroEdicion })
     .eq("familia_id", familiaId)
-    .is("impresa_en_edicion", null);
+    .is("impresa_en_edicion", null)
+    .is("borrado_en", null);
   if (error) throw new Error(error.message);
+}
+
+// ---------------------------------------------------------------------
+// Papelera (Fase 9d): listar lo borrado, borrar de verdad y restaurar
+// pasa por el cliente de sesión del panel (RLS ya deja ver y actualizar
+// cualquier fila de la familia a cualquier miembro — la página de
+// Ajustes es la que decide mostrar esto solo al admin). Lo único que
+// necesita la service role key es la purga: hay que borrar también las
+// fotos en Storage, y eso es cosa del servidor, no de RLS.
+// ---------------------------------------------------------------------
+
+const DIAS_EN_PAPELERA = 30;
+
+/** Se llama de paso cada vez que se abre la papelera, igual que limpiarIntentosViejos(). */
+export async function purgarPapeleraVieja(familiaId: string): Promise<void> {
+  const limite = new Date(Date.now() - DIAS_EN_PAPELERA * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: personasViejas } = await admin
+    .from("personas")
+    .select("id")
+    .eq("familia_id", familiaId)
+    .lt("borrado_en", limite);
+  for (const p of personasViejas ?? []) {
+    await borrarFotosDePersona(familiaId, p.id);
+  }
+  if (personasViejas && personasViejas.length > 0) {
+    await admin
+      .from("personas")
+      .delete()
+      .in("id", personasViejas.map((p) => p.id));
+  }
+
+  const { data: recuerdosViejos } = await admin
+    .from("recuerdos")
+    .select("id")
+    .eq("familia_id", familiaId)
+    .lt("borrado_en", limite);
+  for (const r of recuerdosViejos ?? []) {
+    const { data: fotos } = await admin
+      .from("recuerdo_fotos")
+      .select("ruta_original, ruta_web")
+      .eq("recuerdo_id", r.id);
+    if (fotos && fotos.length > 0) {
+      await borrarFotosDeRecuerdo(fotos.flatMap((f) => [f.ruta_original, f.ruta_web]));
+    }
+  }
+  if (recuerdosViejos && recuerdosViejos.length > 0) {
+    // recuerdo_fotos y recuerdo_personas se van solos por on delete cascade.
+    await admin
+      .from("recuerdos")
+      .delete()
+      .in("id", recuerdosViejos.map((r) => r.id));
+  }
 }

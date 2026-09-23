@@ -48,7 +48,7 @@ Administración (sesión de Supabase Auth):
 
 ## Acceso y seguridad
 
-- RLS activado en todas las tablas. Roles por familia: `admin` (todo) y `colaborador` (ve todo, añade recuerdos, edita los suyos, no borra ni crea personas).
+- RLS activado en todas las tablas. Roles por familia: `admin` y `colaborador` — desde la Fase 9 (9b/9c/9d), ambos agregan, editan y borran (a la papelera) personas y recuerdos por igual; lo único exclusivo del admin es la papelera de Ajustes y la administración de colaboradores.
 - Quien escanea el QR no tiene usuario. Flujo: la página pide el código de acceso → una ruta del servidor llama `verificar_codigo_familia(slug, codigo)` con la service role key → si es correcto, guarda una cookie httpOnly firmada con el id de la familia → las páginas del álbum consultan en el servidor con la service role y entregan las fotos con URL firmadas de corta duración.
 - Limitar intentos de código por IP (fuerza bruta).
 - La service role key vive solo en `.env.local` y en las variables de Vercel. **Nunca** en código del navegador, nunca en Git, nunca en el chat.
@@ -260,9 +260,11 @@ Si el día o el mes cambian y esa persona ya había salido en algún calendario 
 
 ## 9d — Papelera
 
-- Borrar (recuerdos o personas) no elimina de verdad: marca `borrado_en timestamptz`, y desde ahí queda oculto del álbum y de las listas normales del panel — no cambia quién puede verlo por RLS, solo que las consultas fuera de la papelera filtran `borrado_en is null`.
-- El admin ve una papelera en Ajustes: qué se borró, quién y cuándo, con un botón para restaurar (limpia `borrado_en`).
-- Lo borrado hace más de 30 días se elimina de verdad (la fila y sus fotos en Storage) — igual que `intentos_acceso`, se limpia de paso en cada visita a la papelera, sin tarea programada aparte.
+- Borrar (recuerdos o personas) no elimina de verdad: marca `borrado_en timestamptz` y `borrado_por` (quién, `auth.users.id` — migración 008), y desde ahí queda oculto del álbum y de las listas normales del panel. No hizo falta tocar RLS para esto: como "borrar" ahora es un `update` (no un `delete`), ya queda cubierto por las mismas políticas `_editar` que la Fase 9b/9c dejaron abiertas a cualquier miembro; las consultas de lectura normales (panel y álbum) simplemente agregan `.is("borrado_en", null)`.
+- Con esto se completó el reparto de permisos que faltaba desde la 9b/9c: los botones "Borrar" del panel (personas y recuerdos) dejaron de estar detrás de `esAdmin` — ahora cualquier miembro los ve y los usa, igual que "Editar" y "Agregar". El admin sigue siendo el único que ve la papelera y puede restaurar.
+- No hay botón de borrar en el álbum (ni para visitantes ni para miembros): solo existe en el panel. La tabla de permisos dice que el visitante nunca borra; para el miembro con cuenta, borrar solo se construyó en el panel — no se pidió un botón de borrar en la ficha de persona ni en los recuerdos del álbum.
+- El admin ve una papelera en Ajustes: qué se borró (persona o recuerdo), quién y cuándo, con un botón para restaurar (limpia `borrado_en`/`borrado_por`). Usa el cliente de sesión igual que el resto de Ajustes — RLS ya deja ver y actualizar cualquier fila de la familia a un miembro, la página es la que decide mostrar esto solo si `esAdmin`.
+- Lo borrado hace más de 30 días se elimina de verdad (la fila y sus fotos en Storage) — se purga con la service role key (hay que borrar Storage, eso no es cosa de RLS) cada vez que se abre la papelera, igual que `limpiarIntentosViejos()`, sin tarea programada aparte.
 
 ## Reparto final de responsabilidades (al terminar la Fase 9)
 
