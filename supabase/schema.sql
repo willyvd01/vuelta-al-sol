@@ -141,6 +141,8 @@ create table public.personas (
   foto_web      text,                         -- ruta en Storage, versión liviana
   fallecida     boolean not null default false,
   signo         text generated always as (public.signo_zodiacal(mes, dia)) stored,
+  autor_nombre  text,                         -- solo si la agregó un visitante sin sesión (Fase 9)
+  autor_token   text,                         -- ídem: le permite editar/borrar lo suyo
   creada_en     timestamptz not null default now(),
   constraint personas_fecha_valida check (public.fecha_valida(mes, dia)),
   constraint personas_anio_razonable check (anio is null or anio between 1850 and 2100)
@@ -154,7 +156,9 @@ create table public.recuerdos (
   titulo     text not null,
   historia   text,
   lugar      text,
-  creado_por uuid default auth.uid() references auth.users(id) on delete set null,
+  creado_por   uuid default auth.uid() references auth.users(id) on delete set null,
+  autor_nombre text,                          -- solo si lo agregó un visitante sin sesión (Fase 9)
+  autor_token  text,                          -- ídem: le permite editar/borrar lo suyo
   creado_en  timestamptz not null default now()
 );
 create index recuerdos_familia_fecha on public.recuerdos (familia_id, fecha desc);
@@ -190,18 +194,22 @@ create table public.ediciones (
   unique (familia_id, numero)
 );
 
--- Límite de intentos al código de acceso. La IP se guarda como hash,
--- nunca en claro. Sin políticas de RLS: solo el servidor, con la
--- service role key, la usa (ver más abajo).
+-- Límite de intentos al código de acceso, y también (tipo = 'aporte',
+-- Fase 9) límite de cuántos recuerdos y personas se agregan por familia
+-- y por hora desde el álbum. La IP se guarda como hash, nunca en claro.
+-- Sin políticas de RLS: solo el servidor, con la service role key, la usa
+-- (ver más abajo).
 create table public.intentos_acceso (
   id         uuid primary key default gen_random_uuid(),
   ip_hash    text not null,
   familia_id uuid references public.familias(id) on delete cascade,
   exitoso    boolean not null,
+  tipo       text not null default 'acceso' check (tipo in ('acceso', 'aporte')),
   creado_en  timestamptz not null default now()
 );
-create index intentos_acceso_ip_creado      on public.intentos_acceso (ip_hash, creado_en);
-create index intentos_acceso_familia_creado on public.intentos_acceso (familia_id, creado_en);
+create index intentos_acceso_ip_creado         on public.intentos_acceso (ip_hash, creado_en);
+create index intentos_acceso_familia_creado    on public.intentos_acceso (familia_id, creado_en);
+create index intentos_acceso_familia_tipo_creado on public.intentos_acceso (familia_id, tipo, creado_en);
 
 -- ---------------------------------------------------------------------
 -- Identificadores permanentes: están impresos en los QR

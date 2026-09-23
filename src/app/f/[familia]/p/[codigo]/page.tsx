@@ -17,6 +17,7 @@ import {
   formatearFechaLarga,
   anioDeFecha,
 } from "@/lib/meses";
+import { textoEdad } from "@/lib/edad";
 import { SIGNOS, ZODIACO_ICONOS, type SignoClave } from "@/lib/zodiaco";
 import { IconoPersona } from "@/components/iconos";
 import { MarcaAgua } from "@/components/MarcaAgua";
@@ -88,10 +89,8 @@ export default async function FichaPersona({
   const diaMesTexto = formatearDiaMes(persona.dia, persona.mes);
   const mesDeLaPersona = obtenerMes(persona.mes);
 
-  const edad =
-    persona.anio && !persona.fallecida
-      ? new Date().getFullYear() - persona.anio
-      : null;
+  const textoEdadPersona =
+    persona.anio && !persona.fallecida ? textoEdad(persona.anio, persona.mes, persona.dia) : null;
 
   return (
     <main className={styles.pagina}>
@@ -151,11 +150,7 @@ export default async function FichaPersona({
           )}
         </p>
 
-        {edad !== null && (
-          <p className={styles.edad}>
-            Cumple {edad} años el {diaMesTexto}
-          </p>
-        )}
+        {textoEdadPersona && <p className={styles.edad}>{textoEdadPersona}</p>}
 
         <div className={styles.filete} />
         <h2 className={styles.tituloSeccion}>Recuerdos</h2>

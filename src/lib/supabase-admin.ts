@@ -170,6 +170,49 @@ export async function verificarLimiteIntentos(
   return { permitido: true };
 }
 
+// ---------------------------------------------------------------------
+// Límite de aportes (Fase 9): cuántos recuerdos y personas se agregan
+// desde el álbum, por familia y por hora. Misma tabla que los intentos de
+// código (tipo = 'aporte' en vez de 'acceso'), así que también se limpia
+// sola con limpiarIntentosViejos().
+// ---------------------------------------------------------------------
+
+export async function registrarAporte(ipHash: string, familiaId: string): Promise<void> {
+  const { error } = await admin
+    .from("intentos_acceso")
+    .insert({ ip_hash: ipHash, familia_id: familiaId, exitoso: true, tipo: "aporte" });
+  if (error) throw new Error(error.message);
+}
+
+export async function contarAportesPorFamilia(
+  familiaId: string,
+  desde: string
+): Promise<number> {
+  const { count, error } = await admin
+    .from("intentos_acceso")
+    .select("id", { count: "exact", head: true })
+    .eq("familia_id", familiaId)
+    .eq("tipo", "aporte")
+    .gte("creado_en", desde);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+const LIMITE_APORTES_POR_HORA = 20;
+const MENSAJE_LIMITE_APORTES =
+  "Ya se agregaron muchos recuerdos y personas en la última hora. Intenta de nuevo más tarde.";
+
+export async function verificarLimiteAportes(
+  familiaId: string
+): Promise<{ permitido: true } | { permitido: false; mensaje: string }> {
+  const haceUnaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const aportes = await contarAportesPorFamilia(familiaId, haceUnaHora);
+  if (aportes >= LIMITE_APORTES_POR_HORA) {
+    return { permitido: false, mensaje: MENSAJE_LIMITE_APORTES };
+  }
+  return { permitido: true };
+}
+
 const DURACION_URL_FIRMADA = 60 * 10; // 10 minutos, solo dura lo que dura la visita
 
 export async function obtenerPersonasDelMes(

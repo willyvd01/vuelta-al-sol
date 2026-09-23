@@ -83,6 +83,7 @@ export type Database = {
           familia_id: string | null
           id: string
           ip_hash: string
+          tipo: string
         }
         Insert: {
           creado_en?: string
@@ -90,6 +91,7 @@ export type Database = {
           familia_id?: string | null
           id?: string
           ip_hash: string
+          tipo?: string
         }
         Update: {
           creado_en?: string
@@ -97,6 +99,7 @@ export type Database = {
           familia_id?: string | null
           id?: string
           ip_hash?: string
+          tipo?: string
         }
         Relationships: [
           {
@@ -141,6 +144,8 @@ export type Database = {
         Row: {
           anio: number | null
           apellidos: string
+          autor_nombre: string | null
+          autor_token: string | null
           codigo: string
           creada_en: string
           dia: number
@@ -157,6 +162,8 @@ export type Database = {
         Insert: {
           anio?: number | null
           apellidos?: string
+          autor_nombre?: string | null
+          autor_token?: string | null
           codigo?: string
           creada_en?: string
           dia: number
@@ -173,6 +180,8 @@ export type Database = {
         Update: {
           anio?: number | null
           apellidos?: string
+          autor_nombre?: string | null
+          autor_token?: string | null
           codigo?: string
           creada_en?: string
           dia?: number
@@ -279,6 +288,8 @@ export type Database = {
       }
       recuerdos: {
         Row: {
+          autor_nombre: string | null
+          autor_token: string | null
           creado_en: string
           creado_por: string | null
           familia_id: string
@@ -289,6 +300,8 @@ export type Database = {
           titulo: string
         }
         Insert: {
+          autor_nombre?: string | null
+          autor_token?: string | null
           creado_en?: string
           creado_por?: string | null
           familia_id: string
@@ -299,6 +312,8 @@ export type Database = {
           titulo: string
         }
         Update: {
+          autor_nombre?: string | null
+          autor_token?: string | null
           creado_en?: string
           creado_por?: string | null
           familia_id?: string
