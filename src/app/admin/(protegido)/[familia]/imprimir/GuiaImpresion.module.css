@@ -1,0 +1,38 @@
+.guia {
+  margin-bottom: 24px;
+  padding: 16px 18px;
+  border: 1px solid var(--filete);
+  max-width: 46em;
+}
+
+.titulo {
+  margin: 0 0 10px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--bronce);
+}
+
+.bloque {
+  margin: 0 0 10px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--tinta);
+}
+
+.bloque:last-child {
+  margin-bottom: 0;
+}
+
+.bloque strong {
+  color: var(--secundario);
+  font-weight: 500;
+}
+
+@media print {
+  .guia {
+    display: none;
+  }
+}

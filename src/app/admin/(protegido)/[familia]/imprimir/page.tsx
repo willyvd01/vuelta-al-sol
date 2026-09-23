@@ -6,6 +6,7 @@ import { generarQrSvg } from "@/lib/qr";
 import { Portada } from "./Portada";
 import { PaginaMes, type PersonaParaImprimir } from "./PaginaMes";
 import { BotonesImprimir } from "./BotonesImprimir";
+import { GuiaImpresion } from "./GuiaImpresion";
 
 import styles from "./page.module.css";
 
@@ -13,12 +14,23 @@ export const dynamic = "force-dynamic";
 
 const DURACION_URL_FIRMADA = 60 * 10;
 const COLOR_QR = "#1c1a17"; // --tinta: mejor contraste para que el QR escanee bien
+const HOST_LOCAL = /^(localhost|127\.0\.0\.1)(:\d+)?$/;
 
-async function obtenerOrigen(): Promise<string> {
+/**
+ * Un QR ya impreso no se puede corregir: si NEXT_PUBLIC_SITIO_URL está
+ * definida, manda siempre sobre el origen de la petición (que en una LAN o
+ * en localhost nunca sirve para un calendario físico). Si no está
+ * definida y el host tampoco es local, se avisa en pantalla: probablemente
+ * alguien está por imprimir de verdad sin haber configurado el dominio.
+ */
+async function obtenerOrigenParaQr(): Promise<{ origen: string; advertencia: boolean }> {
+  const sitioConfigurado = process.env.NEXT_PUBLIC_SITIO_URL?.replace(/\/+$/, "");
+  if (sitioConfigurado) return { origen: sitioConfigurado, advertencia: false };
+
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
   const proto = h.get("x-forwarded-proto") ?? (process.env.NODE_ENV === "production" ? "https" : "http");
-  return `${proto}://${host}`;
+  return { origen: `${proto}://${host}`, advertencia: !HOST_LOCAL.test(host) };
 }
 
 export default async function VistaDeImpresion({
@@ -72,7 +84,7 @@ export default async function VistaDeImpresion({
     .eq("familia_id", familia.id);
   const numeroProximaEdicion = (edicionesPrevias ?? 0) + 1;
 
-  const origen = await obtenerOrigen();
+  const { origen, advertencia: advertenciaQr } = await obtenerOrigenParaQr();
   const qrPorMes = await Promise.all(
     Array.from({ length: 12 }, (_, i) =>
       generarQrSvg(`${origen}/f/${slug}/${mesEnUrl(i + 1)}`, COLOR_QR)
@@ -88,6 +100,17 @@ export default async function VistaDeImpresion({
       </p>
 
       <BotonesImprimir slug={slug} esAdmin={esAdmin} numeroProximaEdicion={numeroProximaEdicion} />
+
+      {advertenciaQr && (
+        <p className={styles.advertencia}>
+          Los códigos QR de estas páginas apuntan a <strong>{origen}</strong>, la dirección de esta
+          visita, no a un dominio permanente. Si imprimes así, esos QR van a dejar de funcionar en
+          cuanto cambie esa dirección — y no hay forma de corregirlo después de imprimir. Define{" "}
+          <code>NEXT_PUBLIC_SITIO_URL</code> con el dominio definitivo antes de mandar a imprimir.
+        </p>
+      )}
+
+      <GuiaImpresion />
 
       <div className={styles.miniatura}>
         <div className={styles.hoja}>
