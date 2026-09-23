@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requerirMiembro } from "@/lib/admin";
 import { FormularioPersona } from "../../FormularioPersona";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import styles from "../../page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -32,20 +33,22 @@ export default async function EditarPersona({
   return (
     <div>
       <h1 className={styles.titulo}>Editar persona</h1>
-      <FormularioPersona
-        slug={slug}
-        persona={{
-          codigo: persona.codigo,
-          nombres: persona.nombres,
-          apellidos: persona.apellidos,
-          dia: persona.dia,
-          mes: persona.mes,
-          anio: persona.anio,
-          parentesco: persona.parentesco,
-          fallecida: persona.fallecida,
-          fotoWebUrl,
-        }}
-      />
+      <ErrorBoundary titulo="No se pudo cargar el formulario">
+        <FormularioPersona
+          slug={slug}
+          persona={{
+            codigo: persona.codigo,
+            nombres: persona.nombres,
+            apellidos: persona.apellidos,
+            dia: persona.dia,
+            mes: persona.mes,
+            anio: persona.anio,
+            parentesco: persona.parentesco,
+            fallecida: persona.fallecida,
+            fotoWebUrl,
+          }}
+        />
+      </ErrorBoundary>
     </div>
   );
 }

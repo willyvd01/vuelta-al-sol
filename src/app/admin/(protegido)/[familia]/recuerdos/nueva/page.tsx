@@ -1,5 +1,6 @@
 import { requerirMiembro } from "@/lib/admin";
 import { FormularioRecuerdo } from "../FormularioRecuerdo";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import styles from "../page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -21,11 +22,13 @@ export default async function NuevoRecuerdo({
   return (
     <div>
       <h1 className={styles.titulo}>Nuevo recuerdo</h1>
-      <FormularioRecuerdo
-        slug={slug}
-        personasDisponibles={personas ?? []}
-        esAdmin={esAdmin}
-      />
+      <ErrorBoundary titulo="No se pudo cargar el formulario">
+        <FormularioRecuerdo
+          slug={slug}
+          personasDisponibles={personas ?? []}
+          esAdmin={esAdmin}
+        />
+      </ErrorBoundary>
     </div>
   );
 }

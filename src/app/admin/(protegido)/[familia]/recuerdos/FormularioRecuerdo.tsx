@@ -60,47 +60,57 @@ export function FormularioRecuerdo({
     setError(null);
     setEnCurso(true);
 
-    const fotosFinal: (
-      | { tipo: "existente"; id: string }
-      | { tipo: "nueva"; rutaTemporal: string }
-    )[] = [];
+    // Todo el cuerpo va envuelto en try/catch: un error inesperado (de red,
+    // del navegador, etc.) no debe dejar el botón "Guardar" trabado en
+    // "Guardando…" para siempre.
+    try {
+      const fotosFinal: (
+        | { tipo: "existente"; id: string }
+        | { tipo: "nueva"; rutaTemporal: string }
+      )[] = [];
 
-    for (const item of fotos) {
-      if (item.tipo === "existente") {
-        fotosFinal.push({ tipo: "existente", id: item.datos.id });
-        continue;
+      for (const item of fotos) {
+        if (item.tipo === "existente") {
+          fotosFinal.push({ tipo: "existente", id: item.datos.id });
+          continue;
+        }
+        const subida = await crearSubidaFotoRecuerdoAction(slug);
+        if ("error" in subida) {
+          setError(subida.error);
+          setEnCurso(false);
+          return;
+        }
+        const navegador = crearClienteNavegador();
+        const { error: errorSubida } = await navegador.storage
+          .from("fotos")
+          .uploadToSignedUrl(subida.path, subida.token, item.datos.file);
+        if (errorSubida) {
+          setError(`No se pudo subir una foto: ${errorSubida.message}`);
+          setEnCurso(false);
+          return;
+        }
+        fotosFinal.push({ tipo: "nueva", rutaTemporal: subida.path });
       }
-      const subida = await crearSubidaFotoRecuerdoAction(slug);
-      if ("error" in subida) {
-        setError(subida.error);
+
+      formData.set("personas", JSON.stringify([...seleccionadas]));
+      formData.set("fotos", JSON.stringify(fotosFinal));
+      formData.set("fotosBorradas", JSON.stringify(fotosBorradas));
+
+      const resultado = await guardarRecuerdoAction(slug, recuerdo?.id ?? null, formData);
+      if (resultado.error) {
+        setError(resultado.error);
         setEnCurso(false);
         return;
       }
-      const navegador = crearClienteNavegador();
-      const { error: errorSubida } = await navegador.storage
-        .from("fotos")
-        .uploadToSignedUrl(subida.path, subida.token, item.datos.file);
-      if (errorSubida) {
-        setError(`No se pudo subir una foto: ${errorSubida.message}`);
-        setEnCurso(false);
-        return;
-      }
-      fotosFinal.push({ tipo: "nueva", rutaTemporal: subida.path });
-    }
 
-    formData.set("personas", JSON.stringify([...seleccionadas]));
-    formData.set("fotos", JSON.stringify(fotosFinal));
-    formData.set("fotosBorradas", JSON.stringify(fotosBorradas));
-
-    const resultado = await guardarRecuerdoAction(slug, recuerdo?.id ?? null, formData);
-    if (resultado.error) {
-      setError(resultado.error);
+      router.push(`/admin/${slug}/recuerdos`);
+      router.refresh();
+    } catch (e) {
+      setError(
+        e instanceof Error ? `No se pudo guardar el recuerdo: ${e.message}` : "No se pudo guardar el recuerdo."
+      );
       setEnCurso(false);
-      return;
     }
-
-    router.push(`/admin/${slug}/recuerdos`);
-    router.refresh();
   }
 
   return (

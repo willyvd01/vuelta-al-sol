@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { requerirMiembro } from "@/lib/admin";
 import { FormularioRecuerdo } from "../../FormularioRecuerdo";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import styles from "../../page.module.css";
 
 export const dynamic = "force-dynamic";
@@ -49,20 +50,22 @@ export default async function EditarRecuerdo({
   return (
     <div>
       <h1 className={styles.titulo}>Editar recuerdo</h1>
-      <FormularioRecuerdo
-        slug={slug}
-        personasDisponibles={personas ?? []}
-        esAdmin={esAdmin}
-        recuerdo={{
-          id: recuerdo.id,
-          fecha: recuerdo.fecha,
-          titulo: recuerdo.titulo,
-          historia: recuerdo.historia,
-          lugar: recuerdo.lugar,
-          personas: (personasRecuerdo ?? []).map((p) => p.persona_id),
-          fotos: fotosConUrl.filter((f) => f.url),
-        }}
-      />
+      <ErrorBoundary titulo="No se pudo cargar el formulario">
+        <FormularioRecuerdo
+          slug={slug}
+          personasDisponibles={personas ?? []}
+          esAdmin={esAdmin}
+          recuerdo={{
+            id: recuerdo.id,
+            fecha: recuerdo.fecha,
+            titulo: recuerdo.titulo,
+            historia: recuerdo.historia,
+            lugar: recuerdo.lugar,
+            personas: (personasRecuerdo ?? []).map((p) => p.persona_id),
+            fotos: fotosConUrl.filter((f) => f.url),
+          }}
+        />
+      </ErrorBoundary>
     </div>
   );
 }

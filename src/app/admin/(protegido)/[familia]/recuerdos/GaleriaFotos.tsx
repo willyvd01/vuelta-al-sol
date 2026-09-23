@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { generarId } from "@/lib/id";
 import styles from "./FormularioRecuerdo.module.css";
 
 export interface FotoExistente {
@@ -33,30 +34,38 @@ export function GaleriaFotos({
 }) {
   function agregarArchivos(lista: FileList | null) {
     if (!lista) return;
-    const nuevas: FotoItem[] = [];
-    for (const file of Array.from(lista)) {
-      const nombre = file.name.toLowerCase();
-      const esHeic =
-        file.type === "image/heic" ||
-        file.type === "image/heif" ||
-        nombre.endsWith(".heic") ||
-        nombre.endsWith(".heif");
-      if (esHeic) {
-        onError(
-          `"${file.name}" está en formato HEIC (típico de iPhone). Compártela o expórtala como JPG e inténtalo de nuevo.`
-        );
-        continue;
+    try {
+      const nuevas: FotoItem[] = [];
+      for (const file of Array.from(lista)) {
+        const nombre = file.name.toLowerCase();
+        const esHeic =
+          file.type === "image/heic" ||
+          file.type === "image/heif" ||
+          nombre.endsWith(".heic") ||
+          nombre.endsWith(".heif");
+        if (esHeic) {
+          onError(
+            `"${file.name}" está en formato HEIC (típico de iPhone). Compártela o expórtala como JPG e inténtalo de nuevo.`
+          );
+          continue;
+        }
+        if (!TIPOS_VALIDOS.includes(file.type)) {
+          onError(`"${file.name}" no es JPG, PNG ni WebP.`);
+          continue;
+        }
+        nuevas.push({
+          tipo: "nueva",
+          datos: { clave: generarId(), file, previewUrl: URL.createObjectURL(file) },
+        });
       }
-      if (!TIPOS_VALIDOS.includes(file.type)) {
-        onError(`"${file.name}" no es JPG, PNG ni WebP.`);
-        continue;
-      }
-      nuevas.push({
-        tipo: "nueva",
-        datos: { clave: crypto.randomUUID(), file, previewUrl: URL.createObjectURL(file) },
-      });
+      if (nuevas.length > 0) onCambio([...fotos, ...nuevas]);
+    } catch (e) {
+      // Nunca dejar el formulario congelado por un error inesperado al
+      // procesar las fotos elegidas.
+      onError(
+        e instanceof Error ? `No se pudieron agregar las fotos: ${e.message}` : "No se pudieron agregar las fotos."
+      );
     }
-    if (nuevas.length > 0) onCambio([...fotos, ...nuevas]);
   }
 
   function mover(indice: number, direccion: -1 | 1) {

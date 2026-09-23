@@ -1,0 +1,38 @@
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 420px;
+  padding: 16px;
+  border: 1px solid var(--filete);
+  background: var(--marfil);
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--font-cormorant), serif;
+  font-size: 18px;
+  color: var(--tinta);
+}
+
+.mensaje {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #a1503f;
+}
+
+.boton {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--tinta);
+  background: transparent;
+  border: 1px solid var(--filete);
+  cursor: pointer;
+}

@@ -82,35 +82,45 @@ export function FormularioPersona({
 
     setEnCurso(true);
 
-    if (archivo && corte) {
-      const subida = await crearSubidaFotoAction(slug);
-      if ("error" in subida) {
-        setError(subida.error);
-        setEnCurso(false);
-        return;
+    // Todo el cuerpo va envuelto en try/catch: un error inesperado (de red,
+    // del navegador, etc.) no debe dejar el botón "Guardar" trabado en
+    // "Guardando…" para siempre.
+    try {
+      if (archivo && corte) {
+        const subida = await crearSubidaFotoAction(slug);
+        if ("error" in subida) {
+          setError(subida.error);
+          setEnCurso(false);
+          return;
+        }
+        const navegador = crearClienteNavegador();
+        const { error: errorSubida } = await navegador.storage
+          .from("fotos")
+          .uploadToSignedUrl(subida.path, subida.token, archivo);
+        if (errorSubida) {
+          setError(`No se pudo subir la foto: ${errorSubida.message}`);
+          setEnCurso(false);
+          return;
+        }
+        formData.set("rutaTemporal", subida.path);
+        formData.set("corte", JSON.stringify(corte));
       }
-      const navegador = crearClienteNavegador();
-      const { error: errorSubida } = await navegador.storage
-        .from("fotos")
-        .uploadToSignedUrl(subida.path, subida.token, archivo);
-      if (errorSubida) {
-        setError(`No se pudo subir la foto: ${errorSubida.message}`);
-        setEnCurso(false);
-        return;
-      }
-      formData.set("rutaTemporal", subida.path);
-      formData.set("corte", JSON.stringify(corte));
-    }
 
-    const resultado = await guardarPersonaAction(slug, persona?.codigo ?? null, formData);
-    if (resultado.error) {
-      setError(resultado.error);
+      const resultado = await guardarPersonaAction(slug, persona?.codigo ?? null, formData);
+      if (resultado.error) {
+        setError(resultado.error);
+        setEnCurso(false);
+        return;
+      }
+
+      router.push(`/admin/${slug}/personas`);
+      router.refresh();
+    } catch (e) {
+      setError(
+        e instanceof Error ? `No se pudo guardar la persona: ${e.message}` : "No se pudo guardar la persona."
+      );
       setEnCurso(false);
-      return;
     }
-
-    router.push(`/admin/${slug}/personas`);
-    router.refresh();
   }
 
   return (
