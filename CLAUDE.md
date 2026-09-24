@@ -57,7 +57,8 @@ Administración (sesión de Supabase Auth):
 ## Reglas del calendario
 
 - **Orden dentro del mes:** día ascendente; si coinciden, primero la persona de mayor edad (`anio` ascendente, sin año al final); después por apellidos.
-- **Rejilla:** 1–4 personas → 2 columnas; 5–9 → 3 columnas; más de 9 → el mes ocupa dos páginas.
+- **Rejilla (Fase 10a):** siempre 9 casillas, 3 columnas × 3 filas, del mismo tamaño, llenas en orden de lectura (izquierda a derecha, arriba a abajo) con las personas del mes ya ordenadas. Ya no varía el número de columnas según cuántas personas haya. Más de 9 personas: sigue una segunda hoja del mismo mes, con la misma rejilla de 9 (en pantalla, dentro de la misma página del mes; en la impresión, una hoja A3 más — ver "Página A3 del mes"). Las casillas que sobran sin persona quedan vacías (ver más abajo), nunca se estiran ni cambian de tamaño para llenar el espacio.
+- **Casillas vacías:** mismo marco que las ocupadas, con una silueta de persona muy tenue en vez de foto. En el álbum digital son tocables y abren "Agregar a alguien" (el formulario de agregar persona de la Fase 9c, con el mes ya elegido); en el calendario impreso no llevan texto ni son interactivas — Ajustes tiene una casilla para mostrarlas u ocultarlas al imprimir (`mostrar_siluetas_impresas` en `familias`, activada por defecto).
 - **Signo:** columna calculada `personas.signo` en la base; en la interfaz, `signoZodiacal()`. Nombre visible con `SIGNOS[clave].nombre`.
 - **Cabecera del mes:** número, nombre, `traduccionesVisibles(mes)` y los signos que tocan el mes con sus fechas (`signosDelMes`, `rangoSigno`).
 - **Recuerdos:** agrupados por año, del más reciente al más antiguo. Un recuerdo puede incluir a varias personas (`recuerdo_personas`) y varias fotos (`recuerdo_fotos`).
@@ -112,6 +113,7 @@ Rasgos recurrentes:
 - Día del cumpleaños: Cormorant 42 px, bronce · Nombre: Cormorant 22 px, peso 500 · Signo: rótulo + ícono bronce de 28 px
 - **Marca de agua:** el monograma de la familia (`familias.monograma`, p. ej. "W&W") en Cormorant 28 px, repetido en filas alternadas con un patrón SVG de 240 × 168 px, detrás del contenido y dentro del marco. Las fotos la tapan.
 - **Íconos del zodiaco:** `ZODIACO_ICONOS`, trazo 1.2, siempre en línea, nunca emojis.
+- **Marco de casilla (Fase 10a), mismo en pantalla y en impresión:** filete exterior de 1 px color `--filete` alrededor de toda la casilla; la foto (o la silueta, si está vacía) va separada de ese filete por un margen pequeño (6 px en pantalla, 1,5 mm impreso); en las cuatro esquinas, dentro de ese margen, una marca discreta en `--bronce` (un par de líneas cortas en L, no un punto). Sin sombras ni degradados, igual que el resto del sistema. Casilla ocupada y vacía llevan el mismo marco — lo único que cambia es la foto por la silueta tenue.
 
 ## Página A3 del mes (impresión)
 
@@ -120,8 +122,8 @@ Medidas a 96 ppp → milímetros:
 - Página 297 × 420 mm, vertical: `@page { size: 297mm 420mm; margin: 0 }`
 - Franja superior de 17 mm **en blanco** para el anillado (la imprenta perfora; no imprimir agujeros)
 - Márgenes laterales e inferior 10,6 mm → marco con filete bronce de 1 px → relleno interno 8,5 mm
-- **Cabecera:** "01 — [apellidos]" en rótulo bronce; mes en Cormorant 300, 112 px, mayúsculas, `letter-spacing` 0.1em; traducciones; a la derecha, separados por un filete vertical, los signos del mes con ícono y fechas
-- **Rejilla** de retratos según las reglas; separación 5,8 mm entre columnas y 5,3 mm entre filas; barra de 17 mm bajo cada foto: día · nombre y signo · ícono
+- **Cabecera:** "01 — [apellidos]" en rótulo bronce (con "· 1/2" o "· 2/2" si el mes ocupa dos hojas); mes en Cormorant 300, 112 px, mayúsculas, `letter-spacing` 0.1em; traducciones; a la derecha, separados por un filete vertical, los signos del mes con ícono y fechas
+- **Rejilla (Fase 10a):** siempre 3 × 3, del mismo tamaño en las doce hojas — ver "Reglas del calendario". Separación 5,8 mm entre columnas y 5,3 mm entre filas; barra de 17 mm bajo cada foto: día · nombre y signo · ícono. Casillas vacías: mismo marco, silueta muy tenue, sin texto — se pueden ocultar desde Ajustes (`mostrar_siluetas_impresas`)
 - **Pie:** texto "Escanea para abrir [mes] en el álbum digital", tira con los 12 meses (el actual relleno en bronce con texto marfil) y el QR del mes de 23 × 23 mm
 - Imprimir colores de fondo: `print-color-adjust: exact`
 
@@ -142,15 +144,14 @@ Medidas a 96 ppp → milímetros:
 
 ## Vista del mes (celular)
 
-`/f/[familia]/[mes]`. Solo lectura: sin botones de añadir o editar.
+`/f/[familia]/[mes]`. Desde la Fase 9c ya no es de solo lectura: tiene el botón "Agregar a alguien de la familia"; desde la 10a, las casillas vacías de la rejilla también son tocables con el mismo fin.
 
 - Diseñada para celular (390 px de ancho) y centrada en pantallas grandes (ancho máximo ~480 px).
 - Fondo marfil con la marca de agua del monograma de la familia (`familias.monograma`), igual que en impresión pero muy sutil.
 - **Cabecera centrada:** rótulo con el nombre de la familia; fila con flecha al mes anterior, nombre del mes en Cormorant 300 mayúsculas con espaciado amplio, y flecha al mes siguiente (diciembre enlaza a enero y viceversa; zonas táctiles de 44 px mínimo). Debajo, `traduccionesVisibles()` y los signos del mes con su ícono y rango de fechas (`signosDelMes`, `rangoSigno`).
 - Filete y el rótulo "Toca un retrato para abrir su historia".
-- **Rejilla de 3 columnas:** foto cuadrada (`foto_web` con URL firmada; sin foto → fondo `--foto-vacia` con ícono de persona en línea), nombre en Cormorant 500, debajo el día, el nombre del signo y su ícono pequeño en bronce. Cada tarjeta enlaza a `/f/[familia]/p/[codigo]`. Orden según las reglas del calendario.
+- **Rejilla fija de 9 casillas, 3 × 3** (Fase 10a — ver "Reglas del calendario"): foto cuadrada (`foto_web` con URL firmada), nombre en Cormorant 500, debajo el día, el nombre del signo y su ícono pequeño en bronce. Cada tarjeta ocupada enlaza a `/f/[familia]/p/[codigo]`. Orden según las reglas del calendario. Las casillas sin persona muestran la silueta tenue y enlazan a "Agregar a alguien" con el mes ya elegido — nunca se ve la rejilla vacía de verdad, ni siquiera sin cumpleaños ese mes: son 9 invitaciones a agregar a alguien.
 - Al final, la tira de los 12 meses con el actual resaltado en bronce; cada mes enlaza directo a esa página.
-- Sin cumpleaños ese mes: mensaje elegante "Nadie cumple años en [mes]", con la navegación intacta.
 - Mes fuera de 01–12: página 404. Familia desconocida: la puerta de acceso (ver "Acceso al álbum"), nunca un 404 — así no se distingue de un código equivocado.
 - Ningún texto menor a 11 px.
 - Los datos se consultan en el servidor (`src/lib/supabase-admin.ts`, con la service role key); nada de esa llave llega al navegador. Las fotos se muestran con URL firmadas de corta duración generadas también en el servidor.
@@ -270,7 +271,18 @@ Si el día o el mes cambian y esa persona ya había salido en algún calendario 
 
 Nosotros (el panel de `/admin`) creamos familias, las configuramos (Ajustes) y generamos la impresión. La familia, desde el álbum con su código, se mantiene sola: agrega a quien nace o falta, agrega los recuerdos según van pasando, y corrige lo suyo — sin depender de que alguien entre al panel.
 
-## Vista de impresión (Fase 7)
+## Fase 10 — Rediseño visual y centro de ayuda
+
+Se construye en cuatro partes (10a–10d), una a la vez, con confirmación entre cada una — igual que la Fase 9.
+
+## 10a — Rejilla fija de nueve casillas
+
+- La regla de la rejilla (siempre 3 × 3, 9 casillas, llenas en orden de lectura; más de 9 → segunda hoja del mismo mes) y el marco de cada casilla ya quedaron en "Reglas del calendario" y "Sistema de diseño" — esta sección es la parte de implementación.
+- Un solo componente de casilla (`Casilla.tsx` o similar) para las dos vistas del álbum (vista del mes) — nada de dos implementaciones paralelas; el marco y el tamaño se comparten. La impresión (`PaginaMes.tsx`, Fase 7) tiene su propio componente porque ya vive en mm, pero replica el mismo marco visual descrito en "Sistema de diseño".
+- **Casilla ocupada:** foto cuadrada, sin cambios respecto a lo que ya había (día · nombre y signo · ícono en pantalla; barra de 17 mm en impresión).
+- **Casilla vacía:** `<IconoPersona>` muy tenue centrado (mismo ícono que ya se usa para "sin foto", pero con opacidad baja — no es un ícono nuevo). En el álbum, envuelta en un enlace a `/f/[familia]/personas-nueva?mes=…&volver=…` (la misma ruta de la Fase 9c) con texto accesible "Agregar a alguien"; en la impresión, sin enlace ni texto — solo la silueta (o ni eso, si `mostrar_siluetas_impresas` está desactivada).
+- **Segunda hoja del mismo mes:** ya existía para la impresión desde la Fase 7 (el reparto en dos hojas cuando hay más de 9). En el álbum digital es nuevo: si un mes tiene más de 9 personas, la vista del mes muestra dos rejillas de 9 seguidas, no una rejilla que crece — la segunda con las personas que sobraron y las casillas vacías que le falten a esa segunda hoja.
+- `familias.mostrar_siluetas_impresas boolean not null default true` (migración nueva): controla solo la impresión: en el álbum digital las siluetas tocables siempre se muestran (son la forma de agregar gente); lo que se apaga es la silueta en la hoja que se manda a imprimir. Ajustes tiene la casilla para cambiarlo, con el texto exacto que pidió el dueño: "Mostrar siluetas en las casillas vacías del calendario impreso".
 
 `/admin/[familia]/imprimir`. La ve cualquier miembro (admin o colaborador), como "Ver álbum"; es de solo lectura salvo el botón de registrar edición (solo admin).
 
@@ -333,6 +345,7 @@ Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencill
 7. **Vista de impresión:** portada y 12 páginas A3; prueba de exportación a PDF.
 8. **Lanzamiento:** QR por mes, dominio, pruebas en celular, prueba de impresión real de enero.
 9. **Acciones de la familia dentro del álbum** (9a–9d, ver esa sección): edad e identidad del visitante, agregar recuerdos, agregar personas, papelera.
+10. **Rediseño visual y centro de ayuda** (10a–10d, ver esa sección): rejilla fija de 9 casillas, animaciones, cumpleaños de hoy, centro de ayuda y solicitudes.
 
 ## Forma de trabajar
 

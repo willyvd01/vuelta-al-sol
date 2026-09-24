@@ -130,15 +130,6 @@
   color: var(--secundario);
 }
 
-.vacio {
-  text-align: center;
-  font-family: var(--font-cormorant), serif;
-  font-style: italic;
-  font-size: 18px;
-  color: var(--secundario);
-  padding: 40px 0;
-}
-
 .rejilla {
   list-style: none;
   margin: 0 0 32px;
@@ -148,7 +139,8 @@
   gap: 20px 12px;
 }
 
-.tarjeta {
+.tarjeta,
+.tarjetaVacia {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -157,10 +149,52 @@
   color: inherit;
 }
 
-.foto {
+/* Fase 10a: marco de casilla — filete exterior, margen antes de la foto y
+   marcas de bronce discretas en las cuatro esquinas, dentro de ese margen. */
+.marco {
+  --marca-largo: 5px;
+  --marca-grosor: 1px;
+  --marca-borde: 1px;
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
+  box-sizing: border-box;
+  border: 1px solid var(--filete);
+  padding: 6px;
+  background-repeat: no-repeat;
+  background-image:
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce));
+  background-size:
+    var(--marca-largo) var(--marca-grosor),
+    var(--marca-grosor) var(--marca-largo),
+    var(--marca-largo) var(--marca-grosor),
+    var(--marca-grosor) var(--marca-largo),
+    var(--marca-largo) var(--marca-grosor),
+    var(--marca-grosor) var(--marca-largo),
+    var(--marca-largo) var(--marca-grosor),
+    var(--marca-grosor) var(--marca-largo);
+  background-position:
+    top var(--marca-borde) left var(--marca-borde),
+    top var(--marca-borde) left var(--marca-borde),
+    top var(--marca-borde) right var(--marca-borde),
+    top var(--marca-borde) right var(--marca-borde),
+    bottom var(--marca-borde) left var(--marca-borde),
+    bottom var(--marca-borde) left var(--marca-borde),
+    bottom var(--marca-borde) right var(--marca-borde),
+    bottom var(--marca-borde) right var(--marca-borde);
+}
+
+.foto {
+  position: relative;
+  width: 100%;
+  height: 100%;
   background: var(--foto-vacia);
   overflow: hidden;
 }
@@ -171,6 +205,25 @@
   margin: auto;
   width: 36%;
   height: 36%;
+  color: var(--secundario);
+}
+
+.iconoSilueta {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 36%;
+  height: 36%;
+  color: var(--secundario);
+  opacity: 0.28;
+}
+
+.textoAgregar {
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.04em;
   color: var(--secundario);
 }
 

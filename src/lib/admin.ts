@@ -19,6 +19,7 @@ export interface FamiliaAdmin {
   nombre: string;
   slug: string;
   monograma: string | null;
+  mostrarSiluetasImpresas: boolean;
 }
 
 /**
@@ -32,7 +33,7 @@ export async function requerirMiembro(slug: string) {
 
   const { data: familia } = await supabase
     .from("familias")
-    .select("id, nombre, slug, monograma")
+    .select("id, nombre, slug, monograma, mostrar_siluetas_impresas")
     .eq("slug", slug)
     .maybeSingle();
 
@@ -47,5 +48,13 @@ export async function requerirMiembro(slug: string) {
 
   if (!miembro) notFound();
 
-  return { supabase, user, familia: familia as FamiliaAdmin, esAdmin: miembro.rol === "admin" };
+  const familiaAdmin: FamiliaAdmin = {
+    id: familia.id,
+    nombre: familia.nombre,
+    slug: familia.slug,
+    monograma: familia.monograma,
+    mostrarSiluetasImpresas: familia.mostrar_siluetas_impresas,
+  };
+
+  return { supabase, user, familia: familiaAdmin, esAdmin: miembro.rol === "admin" };
 }

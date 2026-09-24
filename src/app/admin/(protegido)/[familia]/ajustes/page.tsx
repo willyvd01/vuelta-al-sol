@@ -99,7 +99,12 @@ export default async function Ajustes({
 
       <section className={styles.seccion}>
         <h2 className={styles.tituloSeccion}>Datos de la familia</h2>
-        <FormularioDatos slug={slug} nombre={familia.nombre} monograma={familia.monograma} />
+        <FormularioDatos
+          slug={slug}
+          nombre={familia.nombre}
+          monograma={familia.monograma}
+          mostrarSiluetasImpresas={familia.mostrarSiluetasImpresas}
+        />
       </section>
 
       <section className={styles.seccion}>

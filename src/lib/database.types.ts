@@ -53,6 +53,7 @@ export type Database = {
           creada_en: string
           id: string
           monograma: string | null
+          mostrar_siluetas_impresas: boolean
           nombre: string
           slug: string
         }
@@ -62,6 +63,7 @@ export type Database = {
           creada_en?: string
           id?: string
           monograma?: string | null
+          mostrar_siluetas_impresas?: boolean
           nombre: string
           slug: string
         }
@@ -71,6 +73,7 @@ export type Database = {
           creada_en?: string
           id?: string
           monograma?: string | null
+          mostrar_siluetas_impresas?: boolean
           nombre?: string
           slug?: string
         }

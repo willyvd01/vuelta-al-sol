@@ -97,19 +97,13 @@
   flex: 1;
   min-height: 0;
   display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
   column-gap: 5.8mm;
   row-gap: 5.3mm;
   margin-top: 8mm;
   list-style: none;
   padding: 0;
-}
-
-.cols2 {
-  grid-template-columns: repeat(2, 1fr);
-}
-
-.cols3 {
-  grid-template-columns: repeat(3, 1fr);
 }
 
 .tarjeta {
@@ -119,11 +113,14 @@
 }
 
 /* El ancho de columna no siempre alcanza para que la foto sea cuadrada
-   Y quepan todas las filas en los 420 mm de la hoja (pasa con 3 columnas
-   × 3 filas, el caso más apretado): la foto crece con flex:1 dentro de su
-   fila ya repartida en partes iguales (grid-template-rows, ver PaginaMes.tsx)
-   y se limita con max-width para no desbordar la columna cuando sobra alto. */
-.foto {
+   Y quepan las 3 filas en los 420 mm de la hoja (el caso, ahora, de
+   siempre): el marco crece con flex:1 dentro de su fila ya repartida en
+   partes iguales y se limita con max-width para no desbordar la columna
+   cuando sobra alto. */
+.marcoCasilla {
+  --marca-largo: 1mm;
+  --marca-grosor: 0.3mm;
+  --marca-borde: 0.4mm;
   position: relative;
   flex: 1;
   min-height: 0;
@@ -131,6 +128,43 @@
   max-width: 100%;
   aspect-ratio: 1 / 1;
   margin: 0 auto;
+  box-sizing: border-box;
+  border: 1px solid var(--filete);
+  padding: 1.5mm;
+  background-repeat: no-repeat;
+  background-image:
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce)),
+    linear-gradient(var(--bronce), var(--bronce));
+  background-size:
+    var(--marca-largo) var(--marca-grosor),
+    var(--marca-grosor) var(--marca-largo),
+    var(--marca-largo) var(--marca-grosor),
+    var(--marca-grosor) var(--marca-largo),
+    var(--marca-largo) var(--marca-grosor),
+    var(--marca-grosor) var(--marca-largo),
+    var(--marca-largo) var(--marca-grosor),
+    var(--marca-grosor) var(--marca-largo);
+  background-position:
+    top var(--marca-borde) left var(--marca-borde),
+    top var(--marca-borde) left var(--marca-borde),
+    top var(--marca-borde) right var(--marca-borde),
+    top var(--marca-borde) right var(--marca-borde),
+    bottom var(--marca-borde) left var(--marca-borde),
+    bottom var(--marca-borde) left var(--marca-borde),
+    bottom var(--marca-borde) right var(--marca-borde),
+    bottom var(--marca-borde) right var(--marca-borde);
+}
+
+.foto {
+  position: relative;
+  width: 100%;
+  height: 100%;
   background: var(--foto-vacia);
   overflow: hidden;
 }
@@ -142,6 +176,16 @@
   width: 30%;
   height: 30%;
   color: var(--secundario);
+}
+
+.iconoSilueta {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 30%;
+  height: 30%;
+  color: var(--secundario);
+  opacity: 0.28;
 }
 
 .barra {

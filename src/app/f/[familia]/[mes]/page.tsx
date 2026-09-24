@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 
-import { obtenerFamiliaPorId, obtenerPersonasDelMes } from "@/lib/supabase-admin";
+import { obtenerFamiliaPorId, obtenerPersonasDelMes, type Persona } from "@/lib/supabase-admin";
 import { verificarAcceso } from "@/lib/acceso";
 import { MESES, obtenerMes, traduccionesVisibles, mesEnUrl } from "@/lib/meses";
 import { SIGNOS, ZODIACO_ICONOS, signosDelMes, rangoSigno, type SignoClave } from "@/lib/zodiaco";
@@ -17,6 +17,21 @@ export const dynamic = "force-dynamic";
 const MES_EN_URL = /^(0[1-9]|1[0-2])$/;
 
 type Params = { familia: string; mes: string };
+
+type Casilla = { tipo: "persona"; persona: Persona } | { tipo: "vacia" };
+
+// Fase 10a: siempre 9 casillas por hoja, llenas en orden de lectura; más de
+// 9 personas siguen en una segunda hoja de 9, no en una rejilla que crece.
+function construirHojas(personas: Persona[]): Casilla[][] {
+  const totalHojas = Math.max(1, Math.ceil(personas.length / 9));
+  return Array.from({ length: totalHojas }, (_, h) => {
+    const casillas: Casilla[] = personas
+      .slice(h * 9, h * 9 + 9)
+      .map((persona) => ({ tipo: "persona" as const, persona }));
+    while (casillas.length < 9) casillas.push({ tipo: "vacia" });
+    return casillas;
+  });
+}
 
 export async function generateMetadata({
   params,
@@ -110,13 +125,28 @@ export default async function VistaDelMes({
         <div className={styles.filete} />
         <p className={styles.instruccion}>Toca un retrato para abrir su historia</p>
 
-        {personas.length === 0 ? (
-          <p className={styles.vacio}>
-            Nadie cumple años en {info.nombre.toLowerCase()}.
-          </p>
-        ) : (
-          <ul className={styles.rejilla}>
-            {personas.map((persona) => {
+        {construirHojas(personas).map((hoja, indiceHoja) => (
+          <ul className={styles.rejilla} key={indiceHoja}>
+            {hoja.map((casilla, indiceCasilla) => {
+              if (casilla.tipo === "vacia") {
+                return (
+                  <li key={`vacia-${indiceHoja}-${indiceCasilla}`}>
+                    <Link
+                      href={`/f/${familiaSlug}/personas-nueva?mes=${mesEnUrl(numeroMes)}&volver=${encodeURIComponent(`/f/${familiaSlug}/${mesParam}`)}`}
+                      className={styles.tarjetaVacia}
+                    >
+                      <div className={styles.marco}>
+                        <div className={styles.foto}>
+                          <IconoPersona className={styles.iconoSilueta} />
+                        </div>
+                      </div>
+                      <p className={styles.textoAgregar}>Agregar a alguien</p>
+                    </Link>
+                  </li>
+                );
+              }
+
+              const persona = casilla.persona;
               const signo = SIGNOS[persona.signo as SignoClave];
               return (
                 <li key={persona.codigo}>
@@ -124,19 +154,21 @@ export default async function VistaDelMes({
                     href={`/f/${familiaSlug}/p/${persona.codigo}`}
                     className={styles.tarjeta}
                   >
-                    <div className={styles.foto}>
-                      {persona.fotoWebUrl ? (
-                        <Image
-                          src={persona.fotoWebUrl}
-                          alt={`${persona.nombres} ${persona.apellidos}`}
-                          fill
-                          sizes="(min-width: 480px) 150px, 33vw"
-                          style={{ objectFit: "cover" }}
-                        />
-                      ) : (
-                        <IconoPersona className={styles.iconoPersonaVacia} />
-                      )}
-                      {!persona.impresa && <span className={styles.etiquetaNueva}>Nueva</span>}
+                    <div className={styles.marco}>
+                      <div className={styles.foto}>
+                        {persona.fotoWebUrl ? (
+                          <Image
+                            src={persona.fotoWebUrl}
+                            alt={`${persona.nombres} ${persona.apellidos}`}
+                            fill
+                            sizes="(min-width: 480px) 150px, 33vw"
+                            style={{ objectFit: "cover" }}
+                          />
+                        ) : (
+                          <IconoPersona className={styles.iconoPersonaVacia} />
+                        )}
+                        {!persona.impresa && <span className={styles.etiquetaNueva}>Nueva</span>}
+                      </div>
                     </div>
                     <p className={styles.nombrePersona}>
                       {persona.nombres} {persona.apellidos}
@@ -168,7 +200,7 @@ export default async function VistaDelMes({
               );
             })}
           </ul>
-        )}
+        ))}
 
         <Link
           href={`/f/${familiaSlug}/personas-nueva?mes=${mesEnUrl(numeroMes)}&volver=${encodeURIComponent(`/f/${familiaSlug}/${mesParam}`)}`}

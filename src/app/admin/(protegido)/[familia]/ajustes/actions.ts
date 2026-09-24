@@ -19,13 +19,14 @@ export async function guardarDatosAction(
 ): Promise<EstadoAjustes> {
   const nombre = String(formData.get("nombre") ?? "").trim();
   const monograma = String(formData.get("monograma") ?? "").trim();
+  const mostrarSiluetasImpresas = formData.get("mostrarSiluetasImpresas") === "on";
 
   if (!nombre) return { error: "El nombre no puede quedar vacío.", exito: false };
 
   const supabase = await crearClienteServidor();
   const { error } = await supabase
     .from("familias")
-    .update({ nombre, monograma: monograma || null })
+    .update({ nombre, monograma: monograma || null, mostrar_siluetas_impresas: mostrarSiluetasImpresas })
     .eq("slug", slug);
 
   if (error) return { error: error.message, exito: false };

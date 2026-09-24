@@ -169,14 +169,17 @@ export default async function VistaDeImpresion({
                   nombreFamilia={familia.nombre}
                   personas={personas}
                   qrSvg={qrSvg}
+                  mostrarSiluetas={familia.mostrarSiluetasImpresas}
                 />
               </div>
             </div>
           );
         }
 
-        const mitad = Math.ceil(personas.length / 2);
-        const partes = [personas.slice(0, mitad), personas.slice(mitad)];
+        // Fase 10a: la primera hoja se llena (9), la segunda se queda con
+        // el resto — no se reparte a la mitad.
+        const partes = [personas.slice(0, 9), personas.slice(9)];
+        const totalPartes = partes.length;
         return partes.map((parte, i) => (
           <div key={`${numeroMes}-${i}`} className={styles.miniatura}>
             <div className={styles.hoja}>
@@ -185,7 +188,8 @@ export default async function VistaDeImpresion({
                 nombreFamilia={familia.nombre}
                 personas={parte}
                 qrSvg={qrSvg}
-                sufijoEtiqueta={` · ${i + 1}/2`}
+                sufijoEtiqueta={` · ${i + 1}/${totalPartes}`}
+                mostrarSiluetas={familia.mostrarSiluetasImpresas}
               />
             </div>
           </div>

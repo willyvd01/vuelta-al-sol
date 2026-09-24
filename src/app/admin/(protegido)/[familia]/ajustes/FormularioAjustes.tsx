@@ -15,10 +15,12 @@ export function FormularioDatos({
   slug,
   nombre,
   monograma,
+  mostrarSiluetasImpresas,
 }: {
   slug: string;
   nombre: string;
   monograma: string | null;
+  mostrarSiluetasImpresas: boolean;
 }) {
   const accion = guardarDatosAction.bind(null, slug);
   const [estado, enviar, enCurso] = useActionState(accion, estadoInicial);
@@ -37,6 +39,14 @@ export function FormularioDatos({
           defaultValue={monograma ?? ""}
           className={styles.campo}
         />
+      </label>
+      <label className={styles.etiquetaCheckbox}>
+        <input
+          type="checkbox"
+          name="mostrarSiluetasImpresas"
+          defaultChecked={mostrarSiluetasImpresas}
+        />
+        Mostrar siluetas en las casillas vacías del calendario impreso
       </label>
       {estado.error && <p className={styles.error}>{estado.error}</p>}
       {estado.exito && <p className={styles.exito}>Guardado.</p>}

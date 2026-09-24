@@ -72,7 +72,8 @@ create table public.familias (
   monograma          text,                                        -- p. ej. 'W&W' para la marca de agua
   codigo_acceso_hash text not null,                               -- nunca guardar el código en claro
   codigo_version     int not null default 1,                      -- sube al cambiar el código; invalida cookies viejas
-  creada_en          timestamptz not null default now()
+  creada_en          timestamptz not null default now(),
+  mostrar_siluetas_impresas boolean not null default true          -- Fase 10a: silueta en casillas vacías del calendario impreso
 );
 
 create table public.miembros (

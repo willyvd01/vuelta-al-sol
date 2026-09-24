@@ -43,6 +43,16 @@
   color: var(--secundario);
 }
 
+.etiquetaCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--secundario);
+}
+
 .campo {
   width: 100%;
   box-sizing: border-box;
