@@ -26,6 +26,11 @@ export async function crearFamiliaAction(
     };
   }
 
+  // /admin/solicitudes es una página fija del panel, no una familia.
+  if (slug === "solicitudes") {
+    return { error: "Ese identificador está reservado, elige otro." };
+  }
+
   const supabase = await crearClienteServidor();
   const { error } = await supabase.rpc("crear_familia", {
     p_nombre: nombre,

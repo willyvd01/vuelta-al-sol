@@ -304,6 +304,21 @@ Todo se calcula con la fecha de hoy en `America/Bogota` (`hoyEnBogota()` de `src
 - **Compartir por WhatsApp:** botón en la ficha, un enlace `https://wa.me/?text=…` con el nombre y la URL de la ficha (base: `NEXT_PUBLIC_SITIO_URL` si está definida, si no el origen de la petición — `src/lib/sitio.ts`). Quien lo reciba igual necesita el código de la familia para abrirla; el enlace no lo incluye.
 - **Datos:** `obtenerCumpleanerosDeHoy(familiaId)` en `src/lib/supabase-admin.ts` (envuelta en `cache()` de React para que el layout y la vista del mes no la repitan en la misma petición).
 
+## 10d — Centro de ayuda y solicitudes
+
+**Álbum: `/f/[familia]/ayuda`.** Mismo marco que el resto del álbum (celular primero, máx. ~480 px, marfil con marca de agua). Sin acceso válido, redirige a `entrar` como cualquier otra página. Se enlaza desde el pie de **todas** las páginas del álbum: el layout `src/app/f/[familia]/layout.tsx` (10c) pinta un pie discreto con "Ayuda" cuando hay acceso válido.
+
+- **Preguntas frecuentes** arriba, respuestas breves, como bloques `<details>` (sin JS): cómo agregar a una persona · cómo agregar un recuerdo · cómo compartir el código de la familia · qué hacer si el QR no abre · cómo pedir que se imprima de nuevo el calendario.
+- **Formulario de solicitud** debajo. Tipos: imprimir de nuevo, corregir datos, agregar personas, otra consulta (`imprimir_de_nuevo`, `corregir_datos`, `agregar_personas`, `otra`). Campos: nombre de quien escribe, contacto (WhatsApp o correo — un solo campo de texto, se guarda tal cual) y mensaje. El nombre se pide siempre (una solicitud no crea la identidad de la 9a); viene rellenado si el visitante ya tiene esa identidad.
+- **"Imprimir de nuevo":** al mandar, la solicitud lleva adjunto automáticamente cuántas personas están sin imprimir y en qué meses (`— Sin imprimir: 3 personas (enero, marzo)`), agregado al final del mensaje por el servidor (no viene del formulario, así no se puede falsear ni se olvida).
+- **Botón "Escríbenos por WhatsApp":** abre `https://wa.me/<número>?text=…` con un mensaje ya escrito que incluye el nombre de la familia. El número sale de la variable de entorno **`WHATSAPP_SOPORTE`** (con código de país, sin signos ni espacios; en `.env.local`, en `.env.local.example` y hay que definirla también en Vercel). Si no está definida, el botón no se muestra.
+
+**Tabla `solicitudes`** (migración `010_solicitudes.sql`, también en `schema.sql`): `id`, `familia_id`, `tipo`, `mensaje`, `contacto`, `autor_nombre`, `estado` (`nueva` | `en_proceso` | `resuelta`, por defecto `nueva`), `creada_en`. RLS activado: los miembros de la familia la leen y actualizan (`es_miembro`); nadie inserta con sesión — los visitantes envían por una server action que **verifica la cookie de acceso** (`verificarAcceso`) y usa **solo el `familia_id` de esa cookie**, nunca uno que venga del formulario ni del slug de la URL, e inserta con la service role key. Límites de largo también en la base (mensaje 3000, contacto 200, nombre 100).
+
+**Límite:** máx. 5 solicitudes por familia por hora (`intentos_acceso` con `tipo = 'solicitud'`, igual que los aportes de la 9a; se limpia sola con `limpiarIntentosViejos`). El constraint de `tipo` de esa tabla se amplía en la misma migración.
+
+**Panel: `/admin/solicitudes`.** Lista las solicitudes de **todas** las familias del usuario (RLS ya filtra), la más reciente primero, filtrable por estado (todas · nuevas · en proceso · resueltas, en la URL: `?estado=`). Cada una muestra familia, tipo, fecha, autor, contacto y mensaje, con botones "Marcar en proceso" / "Marcar resuelta" (server action con la sesión — RLS decide). Un **contador de solicitudes nuevas** aparece como "Solicitudes (N)" en la barra de navegación del panel (la de cada familia y en el inicio del panel) y enlaza a esa página; sin nuevas, solo "Solicitudes". Nota: `solicitudes` pasa a ser un segmento reservado, no puede usarse como slug de una familia.
+
 ## Vista de impresión (Fase 7)
 
 `/admin/[familia]/imprimir`. La ve cualquier miembro (admin o colaborador), como "Ver álbum"; es de solo lectura salvo el botón de registrar edición (solo admin).

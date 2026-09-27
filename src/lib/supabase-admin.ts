@@ -221,6 +221,79 @@ export async function verificarLimiteAportes(
   return { permitido: true };
 }
 
+// ---------------------------------------------------------------------
+// Solicitudes del centro de ayuda (Fase 10d). Los visitantes no escriben
+// con sesión: solo esta función, con la service role key, y siempre
+// después de que la acción del servidor verificó la cookie de acceso.
+// ---------------------------------------------------------------------
+
+export const TIPOS_SOLICITUD = [
+  "imprimir_de_nuevo",
+  "corregir_datos",
+  "agregar_personas",
+  "otra",
+] as const;
+export type TipoSolicitud = (typeof TIPOS_SOLICITUD)[number];
+
+export async function crearSolicitud(
+  familiaId: string,
+  datos: { tipo: TipoSolicitud; mensaje: string; contacto: string; autorNombre: string }
+): Promise<void> {
+  const { error } = await admin.from("solicitudes").insert({
+    familia_id: familiaId,
+    tipo: datos.tipo,
+    mensaje: datos.mensaje,
+    contacto: datos.contacto,
+    autor_nombre: datos.autorNombre,
+  });
+  if (error) throw new Error(error.message);
+}
+
+const LIMITE_SOLICITUDES_POR_HORA = 5;
+
+export async function registrarEnvioSolicitud(ipHash: string, familiaId: string): Promise<void> {
+  const { error } = await admin
+    .from("intentos_acceso")
+    .insert({ ip_hash: ipHash, familia_id: familiaId, exitoso: true, tipo: "solicitud" });
+  if (error) throw new Error(error.message);
+}
+
+export async function verificarLimiteSolicitudes(
+  familiaId: string
+): Promise<{ permitido: true } | { permitido: false; mensaje: string }> {
+  await limpiarIntentosViejos();
+  const haceUnaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  const { count, error } = await admin
+    .from("intentos_acceso")
+    .select("id", { count: "exact", head: true })
+    .eq("familia_id", familiaId)
+    .eq("tipo", "solicitud")
+    .gte("creado_en", haceUnaHora);
+  if (error) throw new Error(error.message);
+  if ((count ?? 0) >= LIMITE_SOLICITUDES_POR_HORA) {
+    return {
+      permitido: false,
+      mensaje: "Ya se enviaron varias solicitudes en la última hora. Intenta de nuevo más tarde.",
+    };
+  }
+  return { permitido: true };
+}
+
+/** Cuántas personas faltan por imprimir y en qué meses (números 1–12, sin repetir, en orden). */
+export async function obtenerSinImprimirPorMes(
+  familiaId: string
+): Promise<{ total: number; meses: number[] }> {
+  const { data, error } = await admin
+    .from("personas")
+    .select("mes")
+    .eq("familia_id", familiaId)
+    .is("impresa_en_edicion", null)
+    .is("borrado_en", null);
+  if (error) throw new Error(error.message);
+  const meses = [...new Set((data ?? []).map((p) => p.mes))].sort((a, b) => a - b);
+  return { total: data?.length ?? 0, meses };
+}
+
 const DURACION_URL_FIRMADA = 60 * 10; // 10 minutos, solo dura lo que dura la visita
 
 export interface PersonaOpcion {

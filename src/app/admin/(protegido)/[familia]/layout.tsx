@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { requerirMiembro } from "@/lib/admin";
 import { mesEnUrl } from "@/lib/meses";
 import { BotonCerrarSesion } from "../BotonCerrarSesion";
+import { EnlaceSolicitudes } from "../EnlaceSolicitudes";
 
 import styles from "./layout.module.css";
 
@@ -31,6 +32,7 @@ export default async function FamiliaAdminLayout({
           <Link href={`/admin/${slug}/recuerdos`}>Recuerdos</Link>
           <Link href={`/admin/${slug}/ajustes`}>Ajustes</Link>
           <Link href={`/admin/${slug}/imprimir`}>Imprimir</Link>
+          <EnlaceSolicitudes />
           <Link href={`/f/${slug}/${mesActual}`}>Ver álbum</Link>
         </nav>
       </header>

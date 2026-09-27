@@ -1,0 +1,148 @@
+.pagina {
+  position: relative;
+  min-height: 100dvh;
+  background: var(--marfil);
+  overflow: hidden;
+}
+
+.contenido {
+  position: relative;
+  z-index: 1;
+  background: var(--marfil);
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 20px 48px;
+}
+
+.regresar {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--bronce);
+  text-decoration: none;
+}
+
+.titulo {
+  margin: 4px 0 20px;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 34px;
+  color: var(--tinta);
+}
+
+.seccion {
+  padding: 20px 0;
+  border-top: 1px solid var(--filete);
+}
+
+.tituloSeccion {
+  margin: 0 0 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--secundario);
+}
+
+.pregunta {
+  border-bottom: 1px solid var(--filete);
+  padding: 4px 0;
+}
+
+.pregunta summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  cursor: pointer;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--tinta);
+}
+
+.pregunta p {
+  margin: 0 0 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--secundario);
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.etiqueta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secundario);
+}
+
+.campo {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 16px;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--tinta);
+  background: var(--marfil);
+  border: 1px solid var(--filete);
+  border-radius: 0;
+}
+
+.boton {
+  padding: 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--marfil);
+  background: var(--bronce);
+  border: none;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.6;
+}
+
+.error {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: #8a2f2f;
+}
+
+.exito {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--bronce);
+}
+
+.whatsapp {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  margin-top: 16px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--bronce);
+  text-decoration: none;
+  border: 1px solid var(--filete);
+}

@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { crearClienteServidor } from "@/lib/supabase-server";
 import { FormularioCrearFamilia } from "./FormularioCrearFamilia";
 import { BotonCerrarSesion } from "./BotonCerrarSesion";
+import { EnlaceSolicitudes } from "./EnlaceSolicitudes";
 
 import styles from "./page.module.css";
 
@@ -23,6 +24,9 @@ export default async function AdminInicio() {
         <h1 className={styles.titulo}>Tus familias</h1>
         <BotonCerrarSesion className={styles.botonSecundario} />
       </div>
+      <p className={styles.enlaceSolicitudes}>
+        <EnlaceSolicitudes />
+      </p>
 
       {familias && familias.length > 0 ? (
         <ul className={styles.lista}>

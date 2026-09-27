@@ -218,12 +218,29 @@ create table public.intentos_acceso (
   ip_hash    text not null,
   familia_id uuid references public.familias(id) on delete cascade,
   exitoso    boolean not null,
-  tipo       text not null default 'acceso' check (tipo in ('acceso', 'aporte')),
+  tipo       text not null default 'acceso'
+             constraint intentos_acceso_tipo_valido check (tipo in ('acceso', 'aporte', 'solicitud')),
   creado_en  timestamptz not null default now()
 );
 create index intentos_acceso_ip_creado         on public.intentos_acceso (ip_hash, creado_en);
 create index intentos_acceso_familia_creado    on public.intentos_acceso (familia_id, creado_en);
 create index intentos_acceso_familia_tipo_creado on public.intentos_acceso (familia_id, tipo, creado_en);
+
+-- Solicitudes desde el centro de ayuda del álbum (Fase 10d). Los visitantes
+-- no escriben directo: solo el servidor (service role), con la cookie de
+-- acceso ya verificada. Los miembros la leen y cambian su estado. El límite
+-- por familia y por hora usa intentos_acceso con tipo = 'solicitud'.
+create table public.solicitudes (
+  id           uuid primary key default gen_random_uuid(),
+  familia_id   uuid not null references public.familias(id) on delete cascade,
+  tipo         text not null check (tipo in ('imprimir_de_nuevo', 'corregir_datos', 'agregar_personas', 'otra')),
+  mensaje      text not null check (char_length(mensaje) between 1 and 3000),
+  contacto     text not null check (char_length(contacto) between 1 and 200),
+  autor_nombre text not null check (char_length(autor_nombre) between 1 and 100),
+  estado       text not null default 'nueva' check (estado in ('nueva', 'en_proceso', 'resuelta')),
+  creada_en    timestamptz not null default now()
+);
+create index solicitudes_familia_estado_creada on public.solicitudes (familia_id, estado, creada_en desc);
 
 -- ---------------------------------------------------------------------
 -- Identificadores permanentes: están impresos en los QR
@@ -341,6 +358,7 @@ alter table public.recuerdo_personas enable row level security;
 alter table public.recuerdo_fotos    enable row level security;
 alter table public.ediciones         enable row level security;
 alter table public.intentos_acceso   enable row level security;
+alter table public.solicitudes       enable row level security;
 
 create policy familias_ver    on public.familias for select to authenticated using (public.es_miembro(id));
 create policy familias_editar on public.familias for update to authenticated
@@ -389,6 +407,11 @@ create policy rf_borrar on public.recuerdo_fotos for delete to authenticated usi
 
 create policy ediciones_ver     on public.ediciones for select to authenticated using (public.es_miembro(familia_id));
 create policy ediciones_agregar on public.ediciones for insert to authenticated with check (public.es_admin(familia_id));
+
+create policy solicitudes_ver on public.solicitudes for select to authenticated
+  using (public.es_miembro(familia_id));
+create policy solicitudes_editar on public.solicitudes for update to authenticated
+  using (public.es_miembro(familia_id)) with check (public.es_miembro(familia_id));
 
 -- ---------------------------------------------------------------------
 -- Almacenamiento de fotos (bucket privado)

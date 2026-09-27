@@ -39,6 +39,13 @@ export default async function FamiliaLayout({ children, params }: LayoutProps<"/
         </aside>
       )}
       {children}
+      {acceso && (
+        <footer className={styles.pie}>
+          <Link href={`/f/${slug}/ayuda`} className={styles.enlacePie}>
+            Ayuda
+          </Link>
+        </footer>
+      )}
     </>
   );
 }

@@ -79,6 +79,47 @@ export type Database = {
         }
         Relationships: []
       }
+      solicitudes: {
+        Row: {
+          autor_nombre: string
+          contacto: string
+          creada_en: string
+          estado: string
+          familia_id: string
+          id: string
+          mensaje: string
+          tipo: string
+        }
+        Insert: {
+          autor_nombre: string
+          contacto: string
+          creada_en?: string
+          estado?: string
+          familia_id: string
+          id?: string
+          mensaje: string
+          tipo: string
+        }
+        Update: {
+          autor_nombre?: string
+          contacto?: string
+          creada_en?: string
+          estado?: string
+          familia_id?: string
+          id?: string
+          mensaje?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solicitudes_familia_id_fkey"
+            columns: ["familia_id"]
+            isOneToOne: false
+            referencedRelation: "familias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intentos_acceso: {
         Row: {
           creado_en: string

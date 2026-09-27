@@ -23,3 +23,25 @@
   text-decoration-color: var(--filete);
   text-underline-offset: 3px;
 }
+
+.pie {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  padding: 4px 20px 28px;
+  background: var(--marfil);
+}
+
+.enlacePie {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--secundario);
+  text-decoration: none;
+}
