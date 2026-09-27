@@ -1,0 +1,107 @@
+/* Fase 10b: animaciones del álbum digital.
+   Nunca deben sobrevivir a la impresión (reset al final) y respetan
+   prefers-reduced-motion (con esa preferencia activa, solo desvanecidos,
+   sin movimiento). Solo transform y opacity, por rendimiento en celular. */
+
+@keyframes vs-entrada-tile {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes vs-desvanecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-name: vs-desvanecer !important;
+  }
+}
+
+/* Cambio de mes: deslizamiento direccional con la View Transitions API.
+   src/components/EnlaceAnimado.tsx pone data-vs-direccion en <html> antes
+   de navegar (y lo omite si el visitante prefiere menos movimiento, con lo
+   que el navegador usa su desvanecido nativo por defecto, sin este CSS). */
+html[data-vs-direccion="siguiente"]::view-transition-old(vs-mes) {
+  animation: 320ms ease-out both vs-sale-izquierda;
+}
+html[data-vs-direccion="siguiente"]::view-transition-new(vs-mes) {
+  animation: 320ms ease-out both vs-entra-derecha;
+}
+html[data-vs-direccion="anterior"]::view-transition-old(vs-mes) {
+  animation: 320ms ease-out both vs-sale-derecha;
+}
+html[data-vs-direccion="anterior"]::view-transition-new(vs-mes) {
+  animation: 320ms ease-out both vs-entra-izquierda;
+}
+
+@keyframes vs-sale-izquierda {
+  to {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+@keyframes vs-entra-derecha {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+@keyframes vs-sale-derecha {
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+@keyframes vs-entra-izquierda {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+}
+
+/* Esqueleto de carga: sustituye el salto de layout por un brillo sutil
+   mientras llega la foto (ver src/components/FotoConEsqueleto.tsx). */
+.vs-esqueleto {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: var(--foto-vacia);
+}
+
+.vs-esqueleto::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  animation: vs-brillo 1.4s ease-in-out infinite;
+}
+
+@keyframes vs-brillo {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media print {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

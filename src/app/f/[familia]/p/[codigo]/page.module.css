@@ -5,6 +5,18 @@
   overflow: hidden;
 }
 
+/* Definida acá y no solo en animaciones.css: CSS Modules le pone prefijo a
+   los nombres de animation-name, y si el keyframes vive solo en el CSS
+   global, el nombre ya no coincide y la animación no se reproduce. */
+@keyframes vs-desvanecer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .contenido {
   position: relative;
   z-index: 1;
@@ -12,6 +24,9 @@
   max-width: 480px;
   margin: 0 auto;
   padding: 20px 20px 48px;
+  /* Fase 10b: sin View Transitions (o al no venir de una casilla), un
+     desvanecido normal en vez de que todo aparezca de golpe. */
+  animation: vs-desvanecer 240ms ease-out both;
 }
 
 .regresar {
@@ -30,6 +45,7 @@
   aspect-ratio: 1 / 1;
   background: var(--foto-vacia);
   margin-top: 4px;
+  overflow: hidden;
 }
 
 .iconoPersonaVacia {

@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 
 import {
   obtenerFamiliaPorId,
@@ -23,6 +23,8 @@ import { SIGNOS, ZODIACO_ICONOS, type SignoClave } from "@/lib/zodiaco";
 import { IconoPersona } from "@/components/iconos";
 import { MarcaAgua } from "@/components/MarcaAgua";
 import { CarruselFotos } from "@/components/CarruselFotos";
+import { EnlaceAnimado } from "@/components/EnlaceAnimado";
+import { FotoConEsqueleto } from "@/components/FotoConEsqueleto";
 
 import styles from "./page.module.css";
 
@@ -97,21 +99,22 @@ export default async function FichaPersona({
       <MarcaAgua monograma={familia.monograma ?? ""} />
 
       <div className={styles.contenido}>
-        <Link
+        <EnlaceAnimado
           href={`/f/${familiaSlug}/${mesEnUrl(persona.mes)}`}
           className={styles.regresar}
         >
           ← {mesDeLaPersona.nombre}
-        </Link>
+        </EnlaceAnimado>
 
-        <div className={styles.retrato}>
+        <div
+          className={styles.retrato}
+          style={{ viewTransitionName: `vs-persona-${persona.codigo}` } as CSSProperties}
+        >
           {persona.fotoWebUrl ? (
-            <Image
+            <FotoConEsqueleto
               src={persona.fotoWebUrl}
               alt={`${persona.nombres} ${persona.apellidos}`}
-              fill
               sizes="(min-width: 480px) 480px, 100vw"
-              style={{ objectFit: "cover" }}
               priority
             />
           ) : (

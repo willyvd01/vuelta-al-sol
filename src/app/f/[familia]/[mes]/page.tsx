@@ -1,7 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
+import type { CSSProperties } from "react";
 
 import { obtenerFamiliaPorId, obtenerPersonasDelMes, type Persona } from "@/lib/supabase-admin";
 import { verificarAcceso } from "@/lib/acceso";
@@ -9,6 +9,8 @@ import { MESES, obtenerMes, traduccionesVisibles, mesEnUrl } from "@/lib/meses";
 import { SIGNOS, ZODIACO_ICONOS, signosDelMes, rangoSigno, type SignoClave } from "@/lib/zodiaco";
 import { IconoFlecha, IconoPersona } from "@/components/iconos";
 import { MarcaAgua } from "@/components/MarcaAgua";
+import { EnlaceAnimado } from "@/components/EnlaceAnimado";
+import { FotoConEsqueleto } from "@/components/FotoConEsqueleto";
 
 import styles from "./page.module.css";
 
@@ -75,26 +77,28 @@ export default async function VistaDelMes({
     <main className={styles.pagina}>
       <MarcaAgua monograma={familia.monograma ?? ""} />
 
-      <div className={styles.contenido}>
+      <div className={styles.contenido} style={{ viewTransitionName: "vs-mes" } as CSSProperties}>
         <header className={styles.cabecera}>
           <p className={styles.nombreFamilia}>{familia.nombre}</p>
 
           <div className={styles.navegacionMes}>
-            <Link
+            <EnlaceAnimado
               href={`/f/${familiaSlug}/${mesEnUrl(mesAnterior)}`}
+              direccion="anterior"
               className={styles.flecha}
               aria-label={`Ir a ${obtenerMes(mesAnterior).nombre}`}
             >
               <IconoFlecha direccion="izquierda" className={styles.iconoFlecha} />
-            </Link>
+            </EnlaceAnimado>
             <h1 className={styles.nombreMes}>{info.nombre}</h1>
-            <Link
+            <EnlaceAnimado
               href={`/f/${familiaSlug}/${mesEnUrl(mesSiguiente)}`}
+              direccion="siguiente"
               className={styles.flecha}
               aria-label={`Ir a ${obtenerMes(mesSiguiente).nombre}`}
             >
               <IconoFlecha direccion="derecha" className={styles.iconoFlecha} />
-            </Link>
+            </EnlaceAnimado>
           </div>
 
           {traducciones.length > 0 && (
@@ -128,9 +132,11 @@ export default async function VistaDelMes({
         {construirHojas(personas).map((hoja, indiceHoja) => (
           <ul className={styles.rejilla} key={indiceHoja}>
             {hoja.map((casilla, indiceCasilla) => {
+              const estiloIndice = { "--indice": indiceCasilla } as CSSProperties;
+
               if (casilla.tipo === "vacia") {
                 return (
-                  <li key={`vacia-${indiceHoja}-${indiceCasilla}`}>
+                  <li key={`vacia-${indiceHoja}-${indiceCasilla}`} style={estiloIndice}>
                     <Link
                       href={`/f/${familiaSlug}/personas-nueva?mes=${mesEnUrl(numeroMes)}&volver=${encodeURIComponent(`/f/${familiaSlug}/${mesParam}`)}`}
                       className={styles.tarjetaVacia}
@@ -149,20 +155,21 @@ export default async function VistaDelMes({
               const persona = casilla.persona;
               const signo = SIGNOS[persona.signo as SignoClave];
               return (
-                <li key={persona.codigo}>
-                  <Link
+                <li key={persona.codigo} style={estiloIndice}>
+                  <EnlaceAnimado
                     href={`/f/${familiaSlug}/p/${persona.codigo}`}
                     className={styles.tarjeta}
                   >
                     <div className={styles.marco}>
-                      <div className={styles.foto}>
+                      <div
+                        className={styles.foto}
+                        style={{ viewTransitionName: `vs-persona-${persona.codigo}` } as CSSProperties}
+                      >
                         {persona.fotoWebUrl ? (
-                          <Image
+                          <FotoConEsqueleto
                             src={persona.fotoWebUrl}
                             alt={`${persona.nombres} ${persona.apellidos}`}
-                            fill
                             sizes="(min-width: 480px) 150px, 33vw"
-                            style={{ objectFit: "cover" }}
                           />
                         ) : (
                           <IconoPersona className={styles.iconoPersonaVacia} />
@@ -195,7 +202,7 @@ export default async function VistaDelMes({
                         </>
                       )}
                     </p>
-                  </Link>
+                  </EnlaceAnimado>
                 </li>
               );
             })}
@@ -211,9 +218,10 @@ export default async function VistaDelMes({
 
         <nav className={styles.tiraMeses} aria-label="Ir a otro mes">
           {MESES.map((mes) => (
-            <Link
+            <EnlaceAnimado
               key={mes.numero}
               href={`/f/${familiaSlug}/${mesEnUrl(mes.numero)}`}
+              direccion={mes.numero >= numeroMes ? "siguiente" : "anterior"}
               className={
                 mes.numero === numeroMes
                   ? `${styles.mesTira} ${styles.mesActivo}`
@@ -221,7 +229,7 @@ export default async function VistaDelMes({
               }
             >
               {mes.abreviatura}
-            </Link>
+            </EnlaceAnimado>
           ))}
         </nav>
       </div>

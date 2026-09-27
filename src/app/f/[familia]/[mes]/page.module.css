@@ -5,6 +5,22 @@
   overflow: hidden;
 }
 
+/* Fase 10b: definida acá (y no solo en animaciones.css) porque CSS Modules
+   le pone su propio prefijo a los nombres de animation-name — si el
+   keyframes vive únicamente en el CSS global, el nombre ya no coincide y
+   la animación no se reproduce. El desvanecido de prefers-reduced-motion
+   lo sigue resolviendo la regla global (esa sí aplica sin scoping). */
+@keyframes vs-entrada-tile {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .contenido {
   position: relative;
   z-index: 1;
@@ -147,6 +163,9 @@
   gap: 6px;
   text-decoration: none;
   color: inherit;
+  /* Fase 10b: entrada escalonada de la rejilla (--indice lo pone cada <li>). */
+  animation: vs-entrada-tile 320ms ease-out both;
+  animation-delay: calc(var(--indice, 0) * 60ms);
 }
 
 /* Fase 10a: marco de casilla — filete exterior, margen antes de la foto y
@@ -161,6 +180,7 @@
   box-sizing: border-box;
   border: 1px solid var(--filete);
   padding: 6px;
+  transition: border-color 240ms ease-out;
   background-repeat: no-repeat;
   background-image:
     linear-gradient(var(--bronce), var(--bronce)),
@@ -197,6 +217,37 @@
   height: 100%;
   background: var(--foto-vacia);
   overflow: hidden;
+  transition: transform 240ms ease-out;
+}
+
+/* Fase 10b: toque/hover — la foto crece un poco y el marco se vuelve bronce. */
+.tarjeta:hover .foto,
+.tarjeta:focus-visible .foto,
+.tarjeta:active .foto,
+.tarjetaVacia:hover .foto,
+.tarjetaVacia:focus-visible .foto,
+.tarjetaVacia:active .foto {
+  transform: scale(1.03);
+}
+
+.tarjeta:hover .marco,
+.tarjeta:focus-visible .marco,
+.tarjeta:active .marco,
+.tarjetaVacia:hover .marco,
+.tarjetaVacia:focus-visible .marco,
+.tarjetaVacia:active .marco {
+  border-color: var(--bronce);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tarjeta:hover .foto,
+  .tarjeta:focus-visible .foto,
+  .tarjeta:active .foto,
+  .tarjetaVacia:hover .foto,
+  .tarjetaVacia:focus-visible .foto,
+  .tarjetaVacia:active .foto {
+    transform: none;
+  }
 }
 
 .iconoPersonaVacia {
