@@ -3,7 +3,7 @@ import { formatearDiaMes } from "./meses";
 // Todo el cálculo se hace contra la fecha de hoy en America/Bogota, no en
 // la zona horaria del servidor (en Vercel corre en UTC): si no, cerca de
 // medianoche en Colombia el texto podría mostrar el día equivocado.
-function hoyEnBogota(): { anio: number; mes: number; dia: number } {
+export function hoyEnBogota(): { anio: number; mes: number; dia: number } {
   const partes = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Bogota",
     year: "numeric",
@@ -42,6 +42,32 @@ export function calcularEdad(
     return { estado: "cumplio", edad };
   }
   return { estado: "cumple", edad };
+}
+
+/** Mes de hoy y los días de nacimiento que cuentan como "hoy" (28 de feb. suma al 29 en año no bisiesto). */
+export function fechasQueCuentanComoHoy(): { mes: number; dias: number[] } {
+  const hoy = hoyEnBogota();
+  const dias = hoy.mes === 2 && hoy.dia === 28 && !esBisiesto(hoy.anio) ? [28, 29] : [hoy.dia];
+  return { mes: hoy.mes, dias };
+}
+
+/** Días de calendario (Bogotá) hasta el próximo cumpleaños; 0 si es hoy. */
+export function diasParaCumple(mes: number, dia: number): number {
+  const hoy = hoyEnBogota();
+  const hoyUtc = Date.UTC(hoy.anio, hoy.mes - 1, hoy.dia);
+  for (const anio of [hoy.anio, hoy.anio + 1]) {
+    const diaEfectivo = mes === 2 && dia === 29 && !esBisiesto(anio) ? 28 : dia;
+    const candidato = Date.UTC(anio, mes - 1, diaEfectivo);
+    if (candidato >= hoyUtc) return Math.round((candidato - hoyUtc) / 86_400_000);
+  }
+  return 0;
+}
+
+/** "Faltan 12 días para su cumpleaños"; null si es hoy (ya lo dice "Hoy cumple…"). */
+export function textoDiasParaCumple(mes: number, dia: number): string | null {
+  const dias = diasParaCumple(mes, dia);
+  if (dias === 0) return null;
+  return dias === 1 ? "Falta 1 día para su cumpleaños" : `Faltan ${dias} días para su cumpleaños`;
 }
 
 /** "Cumple 34 años el 14 de enero" / "Cumplió…" / "Hoy cumple 34 años". */

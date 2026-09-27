@@ -3,7 +3,12 @@ import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 
-import { obtenerFamiliaPorId, obtenerPersonasDelMes, type Persona } from "@/lib/supabase-admin";
+import {
+  obtenerCumpleanerosDeHoy,
+  obtenerFamiliaPorId,
+  obtenerPersonasDelMes,
+  type Persona,
+} from "@/lib/supabase-admin";
 import { verificarAcceso } from "@/lib/acceso";
 import { MESES, obtenerMes, traduccionesVisibles, mesEnUrl } from "@/lib/meses";
 import { SIGNOS, ZODIACO_ICONOS, signosDelMes, rangoSigno, type SignoClave } from "@/lib/zodiaco";
@@ -64,7 +69,11 @@ export default async function VistaDelMes({
   const familia = await obtenerFamiliaPorId(acceso.familiaId);
   if (!familia) notFound();
 
-  const personas = await obtenerPersonasDelMes(acceso.familiaId, numeroMes);
+  const [personas, cumpleanerosHoy] = await Promise.all([
+    obtenerPersonasDelMes(acceso.familiaId, numeroMes),
+    obtenerCumpleanerosDeHoy(acceso.familiaId),
+  ]);
+  const codigosHoy = new Set(cumpleanerosHoy.map((c) => c.codigo));
 
   const info = obtenerMes(numeroMes);
   const traducciones = traduccionesVisibles(numeroMes);
@@ -160,7 +169,13 @@ export default async function VistaDelMes({
                     href={`/f/${familiaSlug}/p/${persona.codigo}`}
                     className={styles.tarjeta}
                   >
-                    <div className={styles.marco}>
+                    <div
+                      className={
+                        codigosHoy.has(persona.codigo)
+                          ? `${styles.marco} ${styles.marcoHoy}`
+                          : styles.marco
+                      }
+                    >
                       <div
                         className={styles.foto}
                         style={{ viewTransitionName: `vs-persona-${persona.codigo}` } as CSSProperties}

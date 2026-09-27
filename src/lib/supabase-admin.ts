@@ -1,7 +1,9 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
+import { cache } from "react";
 import sharp from "sharp";
+import { fechasQueCuentanComoHoy } from "./edad";
 import type { Database } from "./database.types";
 import type { AutorAlbum } from "./autoria";
 
@@ -280,6 +282,32 @@ export async function obtenerPersonasDelMes(
     })
   );
 }
+
+export interface CumpleaneroHoy {
+  codigo: string;
+  nombres: string;
+  apellidos: string;
+  anio: number | null;
+}
+
+/** Quién cumple años hoy (en Bogotá) en esta familia; sin fallecidos ni borrados. */
+export const obtenerCumpleanerosDeHoy = cache(
+  async (familiaId: string): Promise<CumpleaneroHoy[]> => {
+    const { mes, dias } = fechasQueCuentanComoHoy();
+    const { data, error } = await admin
+      .from("personas")
+      .select("codigo, nombres, apellidos, anio")
+      .eq("familia_id", familiaId)
+      .eq("mes", mes)
+      .in("dia", dias)
+      .eq("fallecida", false)
+      .is("borrado_en", null)
+      .order("apellidos", { ascending: true });
+
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  }
+);
 
 export async function obtenerPersonaPorCodigo(
   codigo: string

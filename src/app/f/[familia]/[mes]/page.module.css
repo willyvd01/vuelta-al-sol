@@ -211,6 +211,12 @@
     bottom var(--marca-borde) right var(--marca-borde);
 }
 
+/* Fase 10c: quien cumple años hoy — marco en bronce y un resplandor muy tenue. */
+.marcoHoy {
+  border-color: var(--bronce);
+  box-shadow: 0 0 14px rgba(138, 109, 63, 0.28);
+}
+
 .foto {
   position: relative;
   width: 100%;

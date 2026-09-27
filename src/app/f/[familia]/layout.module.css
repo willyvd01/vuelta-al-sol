@@ -1,0 +1,25 @@
+.aviso {
+  position: relative;
+  z-index: 2;
+  background: var(--marfil);
+  border-bottom: 1px solid var(--filete);
+  padding: 10px 20px;
+}
+
+.texto {
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: center;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--bronce);
+}
+
+.enlace {
+  color: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--filete);
+  text-underline-offset: 3px;
+}

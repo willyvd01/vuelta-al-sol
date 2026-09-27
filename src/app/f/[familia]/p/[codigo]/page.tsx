@@ -18,7 +18,8 @@ import {
   formatearFechaLarga,
   anioDeFecha,
 } from "@/lib/meses";
-import { textoEdad } from "@/lib/edad";
+import { textoEdad, textoDiasParaCumple } from "@/lib/edad";
+import { obtenerOrigenDelSitio } from "@/lib/sitio";
 import { SIGNOS, ZODIACO_ICONOS, type SignoClave } from "@/lib/zodiaco";
 import { IconoPersona } from "@/components/iconos";
 import { MarcaAgua } from "@/components/MarcaAgua";
@@ -93,6 +94,11 @@ export default async function FichaPersona({
 
   const textoEdadPersona =
     persona.anio && !persona.fallecida ? textoEdad(persona.anio, persona.mes, persona.dia) : null;
+  const textoFaltan = persona.fallecida ? null : textoDiasParaCumple(persona.mes, persona.dia);
+
+  const urlFicha = `${await obtenerOrigenDelSitio()}/f/${familiaSlug}/p/${persona.codigo}`;
+  const mensajeWhatsApp = `Mira a ${persona.nombres} ${persona.apellidos} en el álbum de la familia: ${urlFicha}`;
+  const enlaceWhatsApp = `https://wa.me/?text=${encodeURIComponent(mensajeWhatsApp)}`;
 
   return (
     <main className={styles.pagina}>
@@ -155,6 +161,16 @@ export default async function FichaPersona({
         </p>
 
         {textoEdadPersona && <p className={styles.edad}>{textoEdadPersona}</p>}
+        {textoFaltan && <p className={styles.faltan}>{textoFaltan}</p>}
+
+        <a
+          href={enlaceWhatsApp}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.compartir}
+        >
+          Compartir por WhatsApp
+        </a>
 
         {puedeEditar(autor, { creadoPor: null, autorToken: persona.autorToken }) && (
           <Link href={`/f/${familiaSlug}/p/${persona.codigo}/editar`} className={styles.enlaceEditarPersona}>
