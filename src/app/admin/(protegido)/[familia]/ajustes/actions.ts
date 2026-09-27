@@ -143,15 +143,21 @@ export interface EstadoPapelera {
   error: string | null;
 }
 
+const TABLA_POR_TIPO = {
+  persona: "personas",
+  recuerdo: "recuerdos",
+  solicitud: "solicitudes",
+} as const;
+
 /** Cualquier miembro puede borrar/restaurar (RLS ya lo permite); la página que llama a esto es solo del admin. */
 export async function restaurarItemAction(
   slug: string,
-  tipo: "persona" | "recuerdo",
+  tipo: "persona" | "recuerdo" | "solicitud",
   id: string
 ): Promise<EstadoPapelera> {
   const { supabase } = await requerirMiembro(slug);
 
-  const tabla = tipo === "persona" ? "personas" : "recuerdos";
+  const tabla = TABLA_POR_TIPO[tipo];
   const { error } = await supabase
     .from(tabla)
     .update({ borrado_en: null, borrado_por: null })

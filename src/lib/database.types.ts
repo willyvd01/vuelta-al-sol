@@ -82,6 +82,8 @@ export type Database = {
       solicitudes: {
         Row: {
           autor_nombre: string
+          borrado_en: string | null
+          borrado_por: string | null
           contacto: string
           creada_en: string
           estado: string
@@ -92,6 +94,8 @@ export type Database = {
         }
         Insert: {
           autor_nombre: string
+          borrado_en?: string | null
+          borrado_por?: string | null
           contacto: string
           creada_en?: string
           estado?: string
@@ -102,6 +106,8 @@ export type Database = {
         }
         Update: {
           autor_nombre?: string
+          borrado_en?: string | null
+          borrado_por?: string | null
           contacto?: string
           creada_en?: string
           estado?: string

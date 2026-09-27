@@ -53,6 +53,7 @@ export default async function Solicitudes({
   let consulta = supabase
     .from("solicitudes")
     .select("id, familia_id, tipo, mensaje, contacto, autor_nombre, estado, creada_en")
+    .is("borrado_en", null)
     .order("creada_en", { ascending: false });
   if (filtro) consulta = consulta.eq("estado", filtro);
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { cambiarEstadoSolicitudAction } from "./actions";
+import { cambiarEstadoSolicitudAction, borrarSolicitudAction } from "./actions";
 import styles from "./page.module.css";
 
 export function AccionesSolicitud({ id, estado }: { id: string; estado: string }) {
@@ -24,6 +24,20 @@ export function AccionesSolicitud({ id, estado }: { id: string; estado: string }
     setEnCurso(false);
   }
 
+  async function borrar() {
+    if (!confirm("¿Borrar esta solicitud? Queda en la papelera de Ajustes por 30 días.")) return;
+    setEnCurso(true);
+    setError(null);
+    const resultado = await borrarSolicitudAction(id);
+    if (resultado.error) {
+      setError(resultado.error);
+      setEnCurso(false);
+      return;
+    }
+    router.refresh();
+    setEnCurso(false);
+  }
+
   return (
     <div className={styles.acciones}>
       {estado === "nueva" && (
@@ -34,6 +48,11 @@ export function AccionesSolicitud({ id, estado }: { id: string; estado: string }
       {estado !== "resuelta" && (
         <button type="button" onClick={() => cambiar("resuelta")} disabled={enCurso}>
           Marcar resuelta
+        </button>
+      )}
+      {estado === "resuelta" && (
+        <button type="button" onClick={borrar} disabled={enCurso}>
+          Borrar
         </button>
       )}
       {error && <span className={styles.error}>{error}</span>}

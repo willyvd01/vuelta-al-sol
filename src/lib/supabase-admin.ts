@@ -1112,4 +1112,7 @@ export async function purgarPapeleraVieja(familiaId: string): Promise<void> {
       .delete()
       .in("id", recuerdosViejos.map((r) => r.id));
   }
+
+  // Solicitudes borradas (Fase 10d): sin fotos que limpiar, solo la fila.
+  await admin.from("solicitudes").delete().eq("familia_id", familiaId).lt("borrado_en", limite);
 }

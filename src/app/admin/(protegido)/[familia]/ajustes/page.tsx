@@ -43,24 +43,33 @@ export default async function Ajustes({
 
   await purgarPapeleraVieja(familia.id);
 
-  const [{ data: personasBorradas }, { data: recuerdosBorrados }] = await Promise.all([
-    supabase
-      .from("personas")
-      .select("id, nombres, apellidos, borrado_en, borrado_por")
-      .eq("familia_id", familia.id)
-      .not("borrado_en", "is", null),
-    supabase
-      .from("recuerdos")
-      .select("id, titulo, borrado_en, borrado_por")
-      .eq("familia_id", familia.id)
-      .not("borrado_en", "is", null),
-  ]);
+  const [{ data: personasBorradas }, { data: recuerdosBorrados }, { data: solicitudesBorradas }] =
+    await Promise.all([
+      supabase
+        .from("personas")
+        .select("id, nombres, apellidos, borrado_en, borrado_por")
+        .eq("familia_id", familia.id)
+        .not("borrado_en", "is", null),
+      supabase
+        .from("recuerdos")
+        .select("id, titulo, borrado_en, borrado_por")
+        .eq("familia_id", familia.id)
+        .not("borrado_en", "is", null),
+      supabase
+        .from("solicitudes")
+        .select("id, tipo, autor_nombre, borrado_en, borrado_por")
+        .eq("familia_id", familia.id)
+        .not("borrado_en", "is", null),
+    ]);
 
   const idsParaNombres = [
     ...new Set(
-      [...(miembrosCrudos ?? []).map((m) => m.user_id), ...(personasBorradas ?? []).map((p) => p.borrado_por), ...(recuerdosBorrados ?? []).map((r) => r.borrado_por)].filter(
-        (id): id is string => !!id
-      )
+      [
+        ...(miembrosCrudos ?? []).map((m) => m.user_id),
+        ...(personasBorradas ?? []).map((p) => p.borrado_por),
+        ...(recuerdosBorrados ?? []).map((r) => r.borrado_por),
+        ...(solicitudesBorradas ?? []).map((s) => s.borrado_por),
+      ].filter((id): id is string => !!id)
     ),
   ];
   const datosUsuarios = await obtenerDatosDeUsuarios(idsParaNombres);
@@ -76,6 +85,13 @@ export default async function Ajustes({
   const nombreDeQuienBorro = (userId: string | null) =>
     userId ? datosUsuarios.get(userId)?.nombre ?? datosUsuarios.get(userId)?.correo ?? "alguien" : "alguien";
 
+  const NOMBRE_TIPO_SOLICITUD: Record<string, string> = {
+    imprimir_de_nuevo: "Imprimir de nuevo",
+    corregir_datos: "Corregir datos",
+    agregar_personas: "Agregar personas",
+    otra: "Otra consulta",
+  };
+
   const papelera: ItemPapelera[] = [
     ...(personasBorradas ?? []).map((p) => ({
       tipo: "persona" as const,
@@ -90,6 +106,13 @@ export default async function Ajustes({
       titulo: r.titulo,
       borradoEn: r.borrado_en as string,
       borradoPor: nombreDeQuienBorro(r.borrado_por),
+    })),
+    ...(solicitudesBorradas ?? []).map((s) => ({
+      tipo: "solicitud" as const,
+      id: s.id,
+      titulo: `${NOMBRE_TIPO_SOLICITUD[s.tipo] ?? s.tipo} — ${s.autor_nombre}`,
+      borradoEn: s.borrado_en as string,
+      borradoPor: nombreDeQuienBorro(s.borrado_por),
     })),
   ].sort((a, b) => new Date(b.borradoEn).getTime() - new Date(a.borradoEn).getTime());
 

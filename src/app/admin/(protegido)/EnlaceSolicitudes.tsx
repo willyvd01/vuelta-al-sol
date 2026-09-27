@@ -12,7 +12,8 @@ export async function EnlaceSolicitudes({ className }: { className?: string }) {
   const { count, error } = await supabase
     .from("solicitudes")
     .select("id", { count: "exact", head: true })
-    .eq("estado", "nueva");
+    .eq("estado", "nueva")
+    .is("borrado_en", null);
 
   const nuevas = error ? 0 : (count ?? 0);
   return (

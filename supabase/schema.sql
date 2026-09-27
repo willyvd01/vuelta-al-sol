@@ -238,9 +238,12 @@ create table public.solicitudes (
   contacto     text not null check (char_length(contacto) between 1 and 200),
   autor_nombre text not null check (char_length(autor_nombre) between 1 and 100),
   estado       text not null default 'nueva' check (estado in ('nueva', 'en_proceso', 'resuelta')),
-  creada_en    timestamptz not null default now()
+  creada_en    timestamptz not null default now(),
+  borrado_en   timestamptz,                                    -- papelera (igual que personas/recuerdos, Fase 9d)
+  borrado_por  uuid references auth.users(id) on delete set null
 );
 create index solicitudes_familia_estado_creada on public.solicitudes (familia_id, estado, creada_en desc);
+create index solicitudes_borrado_en on public.solicitudes (familia_id, borrado_en);
 
 -- ---------------------------------------------------------------------
 -- Identificadores permanentes: están impresos en los QR

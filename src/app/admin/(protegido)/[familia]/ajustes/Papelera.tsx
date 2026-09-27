@@ -7,12 +7,18 @@ import { restaurarItemAction } from "./actions";
 import styles from "./page.module.css";
 
 export interface ItemPapelera {
-  tipo: "persona" | "recuerdo";
+  tipo: "persona" | "recuerdo" | "solicitud";
   id: string;
   titulo: string;
   borradoEn: string;
   borradoPor: string;
 }
+
+const NOMBRE_TIPO: Record<ItemPapelera["tipo"], string> = {
+  persona: "Persona",
+  recuerdo: "Recuerdo",
+  solicitud: "Solicitud",
+};
 
 function formatearFecha(iso: string): string {
   return new Date(iso).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
@@ -39,7 +45,7 @@ function FilaPapelera({ slug, item }: { slug: string; item: ItemPapelera }) {
       <div>
         <p className={styles.nombreMiembro}>{item.titulo}</p>
         <p className={styles.metaMiembro}>
-          {item.tipo === "persona" ? "Persona" : "Recuerdo"} · borrado por {item.borradoPor} el{" "}
+          {NOMBRE_TIPO[item.tipo]} · borrado por {item.borradoPor} el{" "}
           {formatearFecha(item.borradoEn)}
         </p>
       </div>

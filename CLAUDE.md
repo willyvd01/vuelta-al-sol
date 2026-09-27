@@ -317,7 +317,9 @@ Todo se calcula con la fecha de hoy en `America/Bogota` (`hoyEnBogota()` de `src
 
 **Límite:** máx. 5 solicitudes por familia por hora (`intentos_acceso` con `tipo = 'solicitud'`, igual que los aportes de la 9a; se limpia sola con `limpiarIntentosViejos`). El constraint de `tipo` de esa tabla se amplía en la misma migración.
 
-**Panel: `/admin/solicitudes`.** Lista las solicitudes de **todas** las familias del usuario (RLS ya filtra), la más reciente primero, filtrable por estado (todas · nuevas · en proceso · resueltas, en la URL: `?estado=`). Cada una muestra familia, tipo, fecha, autor, contacto y mensaje, con botones "Marcar en proceso" / "Marcar resuelta" (server action con la sesión — RLS decide). Un **contador de solicitudes nuevas** aparece como "Solicitudes (N)" en la barra de navegación del panel (la de cada familia y en el inicio del panel) y enlaza a esa página; sin nuevas, solo "Solicitudes". Nota: `solicitudes` pasa a ser un segmento reservado, no puede usarse como slug de una familia.
+**Panel: `/admin/solicitudes`.** Lista las solicitudes de **todas** las familias del usuario (RLS ya filtra), la más reciente primero, filtrable por estado (todas · nuevas · en proceso · resueltas, en la URL: `?estado=`). Cada una muestra familia, tipo, fecha, autor, contacto y mensaje, con botones "Marcar en proceso" / "Marcar resuelta" (server action con la sesión — RLS decide); una solicitud **resuelta** además tiene "Borrar" (ver más abajo). Un **contador de solicitudes nuevas** aparece como "Solicitudes (N)" en la barra de navegación del panel (la de cada familia y en el inicio del panel) y enlaza a esa página; sin nuevas, solo "Solicitudes". Nota: `solicitudes` pasa a ser un segmento reservado, no puede usarse como slug de una familia.
+
+**Borrado suave de solicitudes:** mismo mecanismo que personas y recuerdos (Fase 9d) — `borrado_en`/`borrado_por` en vez de `delete` (migración `011_papelera_solicitudes.sql`), filtrado en cada lectura (`/admin/solicitudes` y el contador de la barra) con `.is("borrado_en", null)`. Solo se puede borrar una solicitud con estado `resuelta` (lo revisa la acción del servidor, no la base de datos — mismo criterio de "la app decide el significado de la columna" que ya se usa en el resto de la papelera). Restaurar y purgar (más de 30 días) usan la misma Papelera de Ajustes de cada familia junto con personas y recuerdos — `purgarPapeleraVieja` se extiende para incluir `solicitudes`.
 
 ## Vista de impresión (Fase 7)
 
@@ -391,6 +393,7 @@ Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencill
 - Antes de instalar una dependencia nueva, di para qué sirve.
 - Haz commits pequeños con mensajes en español.
 - Para mostrar el avance sin publicar nada todavía: `cloudflared tunnel --url http://localhost:3000` (con `npm run dev` corriendo) expone el servidor de desarrollo en una URL temporal `https://algo.trycloudflare.com`. `next.config.ts` ya permite ese dominio en `allowedDevOrigins`.
+- **Las credenciales de producción no se comparten en el chat ni se usan para pruebas** — esto incluye los códigos de acceso de las familias, contraseñas de admin y cualquier dato real. Nunca se piden. Las pruebas (cuentas, familias, datos) van siempre contra el proyecto de Supabase de **desarrollo**, con cuentas descartables que se crean y se borran en la misma sesión. Un recorrido en el sitio de producción lo hace el dueño, no el asistente.
 
 ## Antes de imprimir de verdad (lista de lanzamiento, Fase 8)
 
