@@ -266,6 +266,7 @@ Si el día o el mes cambian y esa persona ya había salido en algún calendario 
 - No hay botón de borrar en el álbum (ni para visitantes ni para miembros): solo existe en el panel. La tabla de permisos dice que el visitante nunca borra; para el miembro con cuenta, borrar solo se construyó en el panel — no se pidió un botón de borrar en la ficha de persona ni en los recuerdos del álbum.
 - El admin ve una papelera en Ajustes: qué se borró (persona o recuerdo), quién y cuándo, con un botón para restaurar (limpia `borrado_en`/`borrado_por`). Usa el cliente de sesión igual que el resto de Ajustes — RLS ya deja ver y actualizar cualquier fila de la familia a un miembro, la página es la que decide mostrar esto solo si `esAdmin`.
 - Lo borrado hace más de 30 días se elimina de verdad (la fila y sus fotos en Storage) — se purga con la service role key (hay que borrar Storage, eso no es cosa de RLS) cada vez que se abre la papelera, igual que `limpiarIntentosViejos()`, sin tarea programada aparte.
+- **Fotos huérfanas de subidas abandonadas:** distinto a la papelera — si alguien pide la URL firmada, sube el archivo a `tmp-...` y nunca termina de guardar el formulario, nada más lo limpia. `purgarPapeleraVieja` también barre esos archivos temporales de más de 24 horas (`personas/tmp-…` y `recuerdos/tmp-…`) cada vez que se abre Ajustes — no toca uno que esté subiéndose en ese momento.
 
 ## Reparto final de responsabilidades (al terminar la Fase 9)
 

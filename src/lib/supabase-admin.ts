@@ -1075,9 +1075,39 @@ export async function marcarPersonasComoImpresas(familiaId: string, numeroEdicio
 // ---------------------------------------------------------------------
 
 const DIAS_EN_PAPELERA = 30;
+const HORAS_SUBIDA_TEMPORAL = 24;
+
+/**
+ * Fotos huérfanas de verdad (no las de la papelera, esas ya se limpian
+ * abajo): alguien pide la URL firmada, sube el archivo a `tmp-...`, y
+ * después nunca termina de guardar el formulario. Nada más las borra, así
+ * que se barren acá — solo las de más de 24 horas, para no tocar una
+ * subida que está en curso ahora mismo.
+ */
+async function borrarSubidasTemporalesViejas(familiaId: string): Promise<void> {
+  const limite = Date.now() - HORAS_SUBIDA_TEMPORAL * 60 * 60 * 1000;
+
+  for (const subcarpeta of ["personas", "recuerdos"]) {
+    const { data } = await admin.storage.from("fotos").list(`${familiaId}/${subcarpeta}`, { limit: 1000 });
+    const viejas = (data ?? [])
+      .filter(
+        (item) =>
+          item.id &&
+          item.name.startsWith("tmp-") &&
+          item.created_at &&
+          new Date(item.created_at).getTime() < limite
+      )
+      .map((item) => `${familiaId}/${subcarpeta}/${item.name}`);
+    if (viejas.length > 0) {
+      await admin.storage.from("fotos").remove(viejas);
+    }
+  }
+}
 
 /** Se llama de paso cada vez que se abre la papelera, igual que limpiarIntentosViejos(). */
 export async function purgarPapeleraVieja(familiaId: string): Promise<void> {
+  await borrarSubidasTemporalesViejas(familiaId);
+
   const limite = new Date(Date.now() - DIAS_EN_PAPELERA * 24 * 60 * 60 * 1000).toISOString();
 
   const { data: personasViejas } = await admin
