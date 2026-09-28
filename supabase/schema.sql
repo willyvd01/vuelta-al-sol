@@ -73,8 +73,11 @@ create table public.familias (
   codigo_acceso_hash text not null,                               -- nunca guardar el código en claro
   codigo_version     int not null default 1,                      -- sube al cambiar el código; invalida cookies viejas
   creada_en          timestamptz not null default now(),
-  mostrar_siluetas_impresas boolean not null default true          -- Fase 10a: silueta en casillas vacías del calendario impreso
+  mostrar_siluetas_impresas boolean not null default true,         -- Fase 10a: silueta en casillas vacías del calendario impreso
+  borrado_en         timestamptz,                                  -- papelera de familias: null = visible; ver "Eliminar una familia"
+  borrado_por        uuid references auth.users(id) on delete set null
 );
+create index familias_borrado_en on public.familias (borrado_en);
 
 create table public.miembros (
   familia_id uuid not null references public.familias(id) on delete cascade,
@@ -336,6 +339,7 @@ returns table(id uuid, codigo_version int)
 language sql stable security definer set search_path = public, extensions as $$
   select familias.id, familias.codigo_version from familias
   where slug = p_slug
+    and borrado_en is null
     and codigo_acceso_hash = crypt(public.normalizar_codigo(p_codigo), codigo_acceso_hash);
 $$;
 

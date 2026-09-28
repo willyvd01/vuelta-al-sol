@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { requerirMiembro } from "@/lib/admin";
 import { obtenerDatosDeUsuarios, purgarPapeleraVieja } from "@/lib/supabase-admin";
 import { FormularioDatos, FormularioCodigo, FormularioMiContrasena } from "./FormularioAjustes";
@@ -148,6 +150,16 @@ export default async function Ajustes({
       <section className={styles.seccion}>
         <h2 className={styles.tituloSeccion}>Tu cuenta</h2>
         <FormularioMiContrasena />
+      </section>
+
+      <section className={styles.zonaRiesgo}>
+        <h2 className={styles.tituloZonaRiesgo}>Zona de riesgo</h2>
+        <p className={styles.avisoZonaRiesgo}>
+          Borra la familia y todo lo que tiene: personas, recuerdos, fotos y solicitudes.
+        </p>
+        <Link href={`/admin/${slug}/ajustes/eliminar`} className={styles.botonPeligro}>
+          Eliminar esta familia
+        </Link>
       </section>
     </div>
   );

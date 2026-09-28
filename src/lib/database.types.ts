@@ -48,6 +48,8 @@ export type Database = {
       }
       familias: {
         Row: {
+          borrado_en: string | null
+          borrado_por: string | null
           codigo_acceso_hash: string
           codigo_version: number
           creada_en: string
@@ -58,6 +60,8 @@ export type Database = {
           slug: string
         }
         Insert: {
+          borrado_en?: string | null
+          borrado_por?: string | null
           codigo_acceso_hash: string
           codigo_version?: number
           creada_en?: string
@@ -68,6 +72,8 @@ export type Database = {
           slug: string
         }
         Update: {
+          borrado_en?: string | null
+          borrado_por?: string | null
           codigo_acceso_hash?: string
           codigo_version?: number
           creada_en?: string

@@ -257,3 +257,38 @@
   font-family: monospace;
   font-size: 13px;
 }
+
+.zonaRiesgo {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #8a2f2f;
+}
+
+.tituloZonaRiesgo {
+  margin: 0 0 8px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8a2f2f;
+}
+
+.avisoZonaRiesgo {
+  margin: 0 0 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: var(--secundario);
+}
+
+.botonPeligro {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 16px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #8a2f2f;
+  border: 1px solid #8a2f2f;
+  text-decoration: none;
+}

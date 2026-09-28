@@ -1,0 +1,135 @@
+.volver {
+  margin: 0 0 12px;
+}
+
+.volver a {
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  color: var(--bronce);
+  text-decoration: none;
+}
+
+.titulo {
+  margin: 0 0 12px;
+  font-family: var(--font-cormorant), serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: var(--tinta);
+}
+
+.intro {
+  margin: 0 0 20px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--secundario);
+}
+
+.resumen {
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--filete);
+}
+
+.tituloResumen {
+  margin: 0 0 8px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--secundario);
+}
+
+.listaResumen {
+  margin: 0;
+  padding-left: 18px;
+  font-family: var(--font-cormorant), serif;
+  font-size: 18px;
+  color: var(--tinta);
+}
+
+.avisoEdiciones {
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  border: 1px solid #8a2f2f;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #8a2f2f;
+}
+
+.botonExportar {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 28px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--bronce);
+  border: 1px solid var(--filete);
+  text-decoration: none;
+}
+
+.zonaRiesgo {
+  padding: 20px;
+  border: 1px solid #8a2f2f;
+}
+
+.formulario {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 420px;
+}
+
+.etiqueta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--secundario);
+}
+
+.etiqueta strong {
+  color: var(--tinta);
+}
+
+.campo {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 16px;
+  color: var(--tinta);
+  background: var(--marfil);
+  border: 1px solid var(--filete);
+  border-radius: 0;
+}
+
+.error {
+  margin: 0;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 13px;
+  color: #8a2f2f;
+}
+
+.botonPeligro {
+  padding: 14px;
+  font-family: var(--font-jost), sans-serif;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--marfil);
+  background: #8a2f2f;
+  border: none;
+  cursor: pointer;
+}
+
+.botonPeligro:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

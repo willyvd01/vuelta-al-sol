@@ -33,11 +33,14 @@ export async function requerirMiembro(slug: string) {
 
   const { data: familia } = await supabase
     .from("familias")
-    .select("id, nombre, slug, monograma, mostrar_siluetas_impresas")
+    .select("id, nombre, slug, monograma, mostrar_siluetas_impresas, borrado_en")
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!familia) notFound();
+  // Una familia eliminada (borrado suave) no abre ninguna página del panel,
+  // ni para su propio admin: lo único posible con ella es restaurarla desde
+  // /admin (ver "Eliminar una familia").
+  if (!familia || familia.borrado_en) notFound();
 
   const { data: miembro } = await supabase
     .from("miembros")

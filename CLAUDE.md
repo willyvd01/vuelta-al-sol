@@ -371,6 +371,25 @@ Todo se calcula con la fecha de hoy en `America/Bogota` (`hoyEnBogota()` de `src
 - En Ajustes: lista de miembros con su rol. El admin crea un colaborador con nombre y correo; el sistema genera una contraseña temporal que se muestra una sola vez para compartirla fuera de la app. El colaborador puede cambiarla al entrar.
 - El admin puede quitar miembros, pero no puede quitarse a sí mismo si es el único admin de la familia. Esto se valida en pantalla (`quitarMiembroAction`) y además lo impide un trigger en la base (`proteger_ultimo_admin`, migración 004): ninguna familia puede quedar sin al menos un admin, venga el cambio de donde venga.
 
+## Eliminar una familia
+
+La acción más destructiva del sistema — por eso vive aparte de Ajustes, no como una casilla más.
+
+- **`/admin/[familia]/ajustes`**, al final, una "Zona de riesgo" separada del resto (borde propio, texto de advertencia), solo visible si `esAdmin`: un enlace "Eliminar esta familia" que lleva a una página dedicada, nunca un borrado a un clic.
+- **`/admin/[familia]/ajustes/eliminar`** (solo admin — `notFound()` si no lo es):
+  - Un resumen de lo que se va a perder, contado en el momento: cuántas personas, recuerdos, fotos (de personas + de recuerdos) y solicitudes tiene la familia — **todo lo que existe en la base**, incluido lo que ya está en la papelera de cada tipo (borrar la familia también se lleva eso).
+  - Si la familia tiene alguna fila en `ediciones` (algún calendario ya impreso), una advertencia aparte y más fuerte: esos calendarios están colgados en paredes reales, con un QR que después de borrar deja de abrir.
+  - Un botón "Exportar antes de borrar" (`/admin/[familia]/ajustes/eliminar/exportar`, ver abajo).
+  - El formulario de confirmación: un campo de texto donde hay que escribir el **nombre exacto** de la familia (no una casilla ni un botón solo) para que se habilite "Eliminar esta familia".
+- **Exportación** (`GET /admin/[familia]/ajustes/eliminar/exportar`, solo admin): arma un `.zip` en memoria con `archiver` (nueva dependencia — genera archivos zip por streaming, sin depender de un binario externo) y lo entrega para descargar: `familia.json` (datos de la familia, personas, recuerdos con "con quién" y solicitudes, en texto plano) y las fotos originales bajo `fotos/personas/…` y `fotos/recuerdos/…`. Pensado para que el cliente se quede con su historia antes de borrar — no borra nada por sí solo.
+- **Borrado suave:** `eliminarFamiliaAction` pone `familias.borrado_en`/`borrado_por` (mismo mecanismo que personas/recuerdos/solicitudes) y manda a `/admin`. Una familia con `borrado_en` no es `null`:
+  - No aparece en "Tus familias" de `/admin`.
+  - No abre ninguna página bajo `/admin/[familia]/...` (`requerirMiembro` hace `notFound()`) — ni siquiera para el propio admin; restaurar es lo único que se puede hacer con ella.
+  - No abre el álbum, por ninguna de las dos vías que revisa `verificarAcceso()`: ni por sesión (un admin o colaborador con cuenta activa — `verificarAccesoPorSesion` filtra `borrado_en is null`, porque RLS por sí sola no sabe nada de esta columna) ni por el código con cookie firmada (`obtenerFamiliaPorId` tampoco la devuelve). Tampoco `verificar_codigo_familia` (la función de la base) la deja entrar aunque alguien escriba el código correcto. El QR impreso deja de funcionar desde ese momento, no solo después de los 30 días.
+- **Restaurar:** en `/admin`, debajo de "Tus familias", una sección "Familias eliminadas" (solo las que administra quien mira la página) con el nombre y los días que quedan antes de borrarse de verdad; un botón "Restaurar" limpia `borrado_en`/`borrado_por` y la familia vuelve a funcionar tal cual estaba.
+- **Purga a los 30 días:** al cargar `/admin`, para las familias eliminadas que el usuario administra y ya pasaron el plazo, se borra primero **toda la carpeta de Storage de esa familia** (recursivo, carpeta `{familia_id}/` completa — no solo lo que ya tenía ruta guardada en la base) y luego la fila de `familias`; el resto de las tablas (`personas`, `recuerdos`, `recuerdo_fotos`, `recuerdo_personas`, `ediciones`, `solicitudes`, `miembros`, `intentos_acceso`) se va sola por `on delete cascade`. Mismo patrón que `purgarPapeleraVieja`, pero disparado desde `/admin` en vez de desde la Ajustes de una familia (una familia eliminada ya no tiene esa página).
+- **Sobre el hueco de fotos huérfanas:** se revisó si borrar una persona o un recuerdo fuera de su papelera podía dejar fotos sin dueño en Storage — no existe: los únicos borrados definitivos de personas/recuerdos pasan por `purgarPapeleraVieja`, que ya limpia sus fotos antes de borrar la fila, y quitar una foto suelta de un recuerdo (`borrarFotosRecuerdoAlbumPorId`) también limpia Storage. El único hueco real era este: borrar una familia entera no limpiaba su carpeta — ya está resuelto arriba.
+
 ## Plan por fases
 
 Trabaja **una fase a la vez**. Al terminar cada una: explica en lenguaje sencillo qué se hizo, cómo probarlo, y espera confirmación antes de seguir.

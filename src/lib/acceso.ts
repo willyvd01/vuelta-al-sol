@@ -127,6 +127,11 @@ async function verificarAccesoPorSesion(slug: string): Promise<Acceso | null> {
     .from("familias")
     .select("id, nombre, slug, monograma")
     .eq("slug", slug)
+    // Una familia eliminada (borrado suave) tampoco abre por sesión: RLS
+    // (es_miembro) no sabe nada de esta columna, así que hay que filtrarla
+    // acá — si no, un admin o colaborador con sesión activa seguiría
+    // pudiendo ver y escribir en el álbum de una familia recién borrada.
+    .is("borrado_en", null)
     .maybeSingle();
 
   if (!data) return null;

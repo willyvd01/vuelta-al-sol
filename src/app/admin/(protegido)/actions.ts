@@ -1,7 +1,9 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { crearClienteServidor } from "@/lib/supabase-server";
+import { requerirSesion } from "@/lib/admin";
 
 export interface EstadoCrearFamilia {
   error: string | null;
@@ -47,4 +49,28 @@ export async function crearFamiliaAction(
   }
 
   redirect(`/admin/${slug}`);
+}
+
+/** Solo un admin de esa familia (aunque esté eliminada) puede restaurarla. */
+export async function restaurarFamiliaAction(familiaId: string): Promise<{ error: string | null }> {
+  const { supabase, user } = await requerirSesion();
+
+  const { data: miembro } = await supabase
+    .from("miembros")
+    .select("rol")
+    .eq("familia_id", familiaId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!miembro || miembro.rol !== "admin") {
+    return { error: "Solo un administrador puede restaurar esta familia." };
+  }
+
+  const { error } = await supabase
+    .from("familias")
+    .update({ borrado_en: null, borrado_por: null })
+    .eq("id", familiaId);
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  return { error: null };
 }

@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@supabase/supabase-js";
 import { randomBytes } from "node:crypto";
 import { cache } from "react";
+import archiver from "archiver";
 import sharp from "sharp";
 import { fechasQueCuentanComoHoy } from "./edad";
 import type { Database } from "./database.types";
@@ -86,6 +87,9 @@ export async function obtenerFamiliaPorId(id: string) {
     .from("familias")
     .select("id, nombre, slug, monograma, codigo_version")
     .eq("id", id)
+    // Una familia eliminada (borrado suave) no abre el álbum, ni con una
+    // cookie de acceso ya firmada de antes de borrarla.
+    .is("borrado_en", null)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
@@ -1115,4 +1119,223 @@ export async function purgarPapeleraVieja(familiaId: string): Promise<void> {
 
   // Solicitudes borradas (Fase 10d): sin fotos que limpiar, solo la fila.
   await admin.from("solicitudes").delete().eq("familia_id", familiaId).lt("borrado_en", limite);
+}
+
+// ---------------------------------------------------------------------
+// Eliminar una familia: mismo borrado suave (30 días, restaurable) que
+// personas/recuerdos/solicitudes, pero además tiene que llevarse toda su
+// carpeta de Storage al purgarse — nadie más lo hace por ella.
+// ---------------------------------------------------------------------
+
+/** Borra una carpeta de Storage completa, bajando por sus subcarpetas. */
+async function borrarCarpetaCompleta(prefijo: string): Promise<void> {
+  const { data, error } = await admin.storage.from("fotos").list(prefijo, { limit: 1000 });
+  if (error || !data || data.length === 0) return;
+
+  const archivos: string[] = [];
+  for (const item of data) {
+    if (item.id) {
+      archivos.push(`${prefijo}/${item.name}`);
+    } else {
+      // Sin id ni metadata: es una subcarpeta (personas/{id}, recuerdos/{id}).
+      await borrarCarpetaCompleta(`${prefijo}/${item.name}`);
+    }
+  }
+  if (archivos.length > 0) {
+    await admin.storage.from("fotos").remove(archivos);
+  }
+}
+
+/**
+ * Se llama de paso al abrir /admin, para las familias eliminadas que
+ * administra quien mira la página (igual que purgarPapeleraVieja). Borra
+ * primero toda la carpeta de Storage de la familia — no solo lo que
+ * queda referenciado en la base, por si algo quedó suelto — y después la
+ * fila de `familias`; el resto (personas, recuerdos, recuerdo_fotos,
+ * recuerdo_personas, ediciones, solicitudes, miembros, intentos_acceso)
+ * se va solo por `on delete cascade`.
+ */
+export async function purgarFamiliasVencidas(familiaIds: string[]): Promise<void> {
+  if (familiaIds.length === 0) return;
+  const limite = new Date(Date.now() - DIAS_EN_PAPELERA * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: vencidas } = await admin
+    .from("familias")
+    .select("id")
+    .in("id", familiaIds)
+    .not("borrado_en", "is", null)
+    .lt("borrado_en", limite);
+
+  for (const familia of vencidas ?? []) {
+    await borrarCarpetaCompleta(familia.id);
+    await admin.from("familias").delete().eq("id", familia.id);
+  }
+}
+
+export interface ResumenBorradoFamilia {
+  personas: number;
+  recuerdos: number;
+  fotos: number;
+  solicitudes: number;
+  ediciones: number;
+}
+
+/** Todo lo que existe hoy para esa familia, incluido lo que ya está en cada papelera: borrar la familia se lo lleva todo. */
+export async function obtenerResumenBorradoFamilia(familiaId: string): Promise<ResumenBorradoFamilia> {
+  const [personas, recuerdos, fotosPersonas, fotosRecuerdos, solicitudes, ediciones] = await Promise.all([
+    admin.from("personas").select("id", { count: "exact", head: true }).eq("familia_id", familiaId),
+    admin.from("recuerdos").select("id", { count: "exact", head: true }).eq("familia_id", familiaId),
+    admin
+      .from("personas")
+      .select("id", { count: "exact", head: true })
+      .eq("familia_id", familiaId)
+      .not("foto_original", "is", null),
+    admin.from("recuerdo_fotos").select("id", { count: "exact", head: true }).eq("familia_id", familiaId),
+    admin.from("solicitudes").select("id", { count: "exact", head: true }).eq("familia_id", familiaId),
+    admin.from("ediciones").select("id", { count: "exact", head: true }).eq("familia_id", familiaId),
+  ]);
+
+  return {
+    personas: personas.count ?? 0,
+    recuerdos: recuerdos.count ?? 0,
+    fotos: (fotosPersonas.count ?? 0) + (fotosRecuerdos.count ?? 0),
+    solicitudes: solicitudes.count ?? 0,
+    ediciones: ediciones.count ?? 0,
+  };
+}
+
+function nombreDeArchivo(texto: string): string {
+  return (
+    texto
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .replace(/[^a-zA-Z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80) || "sin-nombre"
+  );
+}
+
+/**
+ * Arma el .zip que se ofrece antes de borrar una familia: familia.json con
+ * todos sus datos en texto plano, y las fotos originales de personas y
+ * recuerdos. Se arma en memoria (no en streaming a disco): con la escala
+ * de este producto (decenas o cientos de fotos por familia) es simple y
+ * suficiente; una familia enorme podría acercarse al límite de tiempo de
+ * una función de Vercel, pero no es el caso típico.
+ */
+export async function construirExportacionFamilia(
+  familiaId: string,
+  nombreFamilia: string
+): Promise<Buffer> {
+  const archivo = archiver("zip", { zlib: { level: 9 } });
+  const trozos: Buffer[] = [];
+  archivo.on("data", (trozo: Buffer) => trozos.push(trozo));
+  const listo = new Promise<Buffer>((resolve, reject) => {
+    archivo.on("end", () => resolve(Buffer.concat(trozos)));
+    archivo.on("error", reject);
+  });
+
+  const [{ data: personas }, { data: recuerdos }, { data: solicitudes }] = await Promise.all([
+    admin
+      .from("personas")
+      .select("id, codigo, nombres, apellidos, dia, mes, anio, parentesco, fallecida, foto_original, autor_nombre, creada_en")
+      .eq("familia_id", familiaId)
+      .order("apellidos"),
+    admin
+      .from("recuerdos")
+      .select("id, fecha, titulo, historia, lugar, autor_nombre, creado_en")
+      .eq("familia_id", familiaId)
+      .order("fecha"),
+    admin
+      .from("solicitudes")
+      .select("tipo, mensaje, contacto, autor_nombre, estado, creada_en")
+      .eq("familia_id", familiaId)
+      .order("creada_en"),
+  ]);
+
+  const recuerdoIds = (recuerdos ?? []).map((r) => r.id);
+  const [{ data: fotosRecuerdos }, { data: vinculos }] = await Promise.all([
+    recuerdoIds.length > 0
+      ? admin
+          .from("recuerdo_fotos")
+          .select("id, recuerdo_id, ruta_original, orden")
+          .in("recuerdo_id", recuerdoIds)
+          .order("orden")
+      : Promise.resolve({ data: [] as { id: string; recuerdo_id: string; ruta_original: string; orden: number }[] }),
+    recuerdoIds.length > 0
+      ? admin.from("recuerdo_personas").select("recuerdo_id, persona_id").in("recuerdo_id", recuerdoIds)
+      : Promise.resolve({ data: [] as { recuerdo_id: string; persona_id: string }[] }),
+  ]);
+
+  const nombrePorPersonaId = new Map((personas ?? []).map((p) => [p.id, `${p.nombres} ${p.apellidos}`.trim()]));
+
+  const datos = {
+    familia: { nombre: nombreFamilia, exportada_en: new Date().toISOString() },
+    personas: (personas ?? []).map((p) => ({
+      codigo: p.codigo,
+      nombres: p.nombres,
+      apellidos: p.apellidos,
+      dia: p.dia,
+      mes: p.mes,
+      anio: p.anio,
+      parentesco: p.parentesco,
+      fallecida: p.fallecida,
+      tiene_foto: !!p.foto_original,
+      agregada_por: p.autor_nombre,
+      creada_en: p.creada_en,
+    })),
+    recuerdos: (recuerdos ?? []).map((r) => ({
+      fecha: r.fecha,
+      titulo: r.titulo,
+      historia: r.historia,
+      lugar: r.lugar,
+      con: (vinculos ?? [])
+        .filter((v) => v.recuerdo_id === r.id)
+        .map((v) => nombrePorPersonaId.get(v.persona_id))
+        .filter((n): n is string => !!n),
+      fotos: (fotosRecuerdos ?? []).filter((f) => f.recuerdo_id === r.id).length,
+      agregado_por: r.autor_nombre,
+      creado_en: r.creado_en,
+    })),
+    solicitudes: (solicitudes ?? []).map((s) => ({
+      tipo: s.tipo,
+      mensaje: s.mensaje,
+      contacto: s.contacto,
+      autor: s.autor_nombre,
+      estado: s.estado,
+      creada_en: s.creada_en,
+    })),
+  };
+
+  archivo.append(JSON.stringify(datos, null, 2), { name: "familia.json" });
+  archivo.append(
+    "Exportación de Vuelta al Sol\n\n" +
+      "familia.json tiene todos los datos en texto plano.\n" +
+      "Las fotos originales están en la carpeta fotos/, organizadas por persona y por recuerdo.\n",
+    { name: "LEEME.txt" }
+  );
+
+  for (const p of personas ?? []) {
+    if (!p.foto_original) continue;
+    const { data: bytes } = await admin.storage.from("fotos").download(p.foto_original);
+    if (!bytes) continue;
+    const nombre = `${nombreDeArchivo(p.apellidos)}-${nombreDeArchivo(p.nombres)}-${p.codigo}.jpg`;
+    archivo.append(Buffer.from(await bytes.arrayBuffer()), { name: `fotos/personas/${nombre}` });
+  }
+
+  for (const r of recuerdos ?? []) {
+    const fotos = (fotosRecuerdos ?? []).filter((f) => f.recuerdo_id === r.id);
+    if (fotos.length === 0) continue;
+    const carpeta = `${r.fecha}-${nombreDeArchivo(r.titulo)}`;
+    for (const f of fotos) {
+      const { data: bytes } = await admin.storage.from("fotos").download(f.ruta_original);
+      if (!bytes) continue;
+      archivo.append(Buffer.from(await bytes.arrayBuffer()), {
+        name: `fotos/recuerdos/${carpeta}/${f.orden + 1}.jpg`,
+      });
+    }
+  }
+
+  archivo.finalize();
+  return listo;
 }
